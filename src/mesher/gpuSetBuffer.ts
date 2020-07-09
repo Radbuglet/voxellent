@@ -5,7 +5,7 @@ type GpuSetElement = {
     index: number
     buffer: ArrayBuffer
 };
-type ReadonlyGpuSetElement = Readonly<GpuSetElement>;
+export type ReadonlyGpuSetElement = Readonly<GpuSetElement>;
 
 export class GpuSetBuffer {
     // Construction

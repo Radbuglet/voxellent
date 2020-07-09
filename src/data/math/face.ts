@@ -1,4 +1,5 @@
 import {vec3} from "gl-matrix";
+import {Sign} from "./math";
 
 export enum Axis {
     x, y, z
@@ -34,7 +35,7 @@ export const FaceUtils = new (class {
     }
 
     getSign(face: VoxelFace) {
-        return 1 - (face ^ 1 << 1) as 1 | -1;  // => (1 - 2 * x) where x is the sign of the face
+        return 1 - (face ^ 1 << 1) as Sign;  // => (1 - 2 * x) where x is the sign of the face
     }
 
     getTowardsVec(face: VoxelFace): Readonly<vec3> {

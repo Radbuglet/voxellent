@@ -1,19 +1,17 @@
 import {FaceUtils, VoxelFace} from "./math/face";
 import {vec3} from "gl-matrix";
 import {getVectorKey, isIntVec, VectorKey} from "./math/math";
-import {ChunkIndex} from "./math/chunkIndex";
+import {CHUNK_SIZE, ChunkIndex} from "./math/chunkIndex";
 
-// TODO: Voxel pointers, traversal and building utilities
-// TODO: Ray casts and rigid bodies
-export class VoxelWorld<TWrapped> {
+// TODO: Traversal utilities, ray casts and rigid bodies
+export class VoxelWorld<TWrapped = never> {
     private readonly chunks = new Map<VectorKey, VoxelChunk<TWrapped>>();
 
-    constructor(public readonly chunk_size: number) {}
-
-    addChunk(pos: vec3, wrapped_instance: TWrapped): VoxelChunk<TWrapped> {
+    // Chunk management
+    addChunk(pos: vec3, wrapped_instance: TWrapped, voxel_byte_size: number): VoxelChunk<TWrapped> {
         console.assert(!this.chunks.has(getVectorKey(pos)) && isIntVec(pos));
 
-        const instance = new VoxelChunk(wrapped_instance, this.chunk_size);
+        const instance = new VoxelChunk(wrapped_instance, voxel_byte_size);
         this.chunks.set(getVectorKey(pos), instance);
 
         // Link with neighbors
@@ -42,16 +40,26 @@ export class VoxelWorld<TWrapped> {
     getChunk(pos: vec3) {
         return this.chunks.get(getVectorKey(pos));
     }
-}
 
-export class VoxelChunk<TWrapped> {
-    private readonly neighbors: (VoxelChunk<TWrapped> | undefined)[] = new Array(6);
-    private readonly data: Uint16Array;
-
-    constructor(public readonly parent: TWrapped, public readonly chunk_size: number) {
-        this.data = new Uint16Array(2 * chunk_size ** 3);
+    // Voxel lookups
+    static decodePosition(ws: vec3): { outer: vec3, inner: ChunkIndex } {
+        throw "Not implemented";
     }
 
+    getVoxel(pos: vec3): VoxelPointer<TWrapped> {
+        throw "Not implemented";
+    }
+}
+
+export class VoxelChunk<TWrapped = never> {
+    private readonly neighbors: (VoxelChunk<TWrapped> | undefined)[] = new Array(6);
+    private readonly data: ArrayBuffer;
+
+    constructor(public readonly parent: TWrapped, private readonly voxel_byte_size: number) {
+        this.data = new ArrayBuffer(voxel_byte_size * CHUNK_SIZE ** 3);
+    }
+
+    // Neighbor management
     linkToNeighbor(face: VoxelFace, other: VoxelChunk<TWrapped>) {
         this.neighbors[face] = other;
         other.neighbors[FaceUtils.getInverse(face)] = this;
@@ -61,17 +69,41 @@ export class VoxelChunk<TWrapped> {
         return this.neighbors[face];
     }
 
-    setVoxel(pos: ChunkIndex, type: number, data: number) {
-        pos *= 2;  // Two shorts per voxel
-        this.data[pos] = type;
-        this.data[pos + 1] = data;
+    // Voxel lookups
+    getVoxel(pos: vec3): VoxelPointer<TWrapped> {
+        throw "Not implemented";
     }
 
-    getVoxelRaw(pos: ChunkIndex): { type: number, data: number } {
-        pos *= 2;  // Two shorts per voxel
-        return {
-            type: this.data[pos],
-            data: this.data[pos + 1]
-        };
+    // Raw voxel management
+    getVoxelRaw(pos: ChunkIndex): ArrayBuffer {
+        return this.data.slice(pos * this.voxel_byte_size, this.voxel_byte_size);
+    }
+}
+
+export class VoxelPointer<TWrapped = never> {
+    constructor(public outer_pos: vec3, public inner_pos: ChunkIndex, public chunk?: VoxelChunk<TWrapped>) {}
+
+    attemptReattach() {
+        throw "Not implemented";
+    }
+
+    getData(): ArrayBuffer {
+        throw "Not implemented";
+    }
+
+    getNeighbor(face: VoxelFace, jump_size: number) {
+        throw "Not implemented";
+    }
+
+    setWorldPos(pos: vec3) {
+        throw "Not implemented";
+    }
+
+    clone(): VoxelPointer<TWrapped> {
+        throw "Not implemented";
+    }
+
+    copyTo(target: VoxelPointer<TWrapped>) {
+        throw "Not implemented";
     }
 }

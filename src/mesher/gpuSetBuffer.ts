@@ -15,6 +15,22 @@ export class GpuSetBuffer {
     constructor(private readonly word_size: number, private length_capacity: number, public ideal_capacity_getter: IdealCapacityGetter) {
     }
 
+    static withIdealCapacity(gl: GlCtx, word_size: number, ideal_capacity_getter: IdealCapacityGetter): { buffer: WebGLBuffer, manager: GpuSetBuffer } | null {
+        const buffer = gl.createBuffer();
+        if (buffer == null) return null;
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        const capacity = ideal_capacity_getter(0);
+        gl.bufferData(gl.ARRAY_BUFFER, word_size * capacity, gl.DYNAMIC_DRAW);
+        return {
+            buffer,
+            manager: new GpuSetBuffer(word_size, capacity, ideal_capacity_getter)
+        };
+    }
+
+    get length() {
+        return this.element_mirror.length;
+    }
+
     // Capacity management
     getCapacityDiscrepancy() {
         return Math.max(this.ideal_capacity_getter(this.element_mirror.length), this.element_mirror.length) - this.length_capacity;
@@ -83,11 +99,24 @@ export class GpuSetBuffer {
         }
     }
 
-    removeElement(gl: GlCtx, element: ReadonlyGpuSetElement): boolean {
-        throw "Not implemented";  // TODO
+    removeElement(gl: GlCtx, element: ReadonlyGpuSetElement) {
+        const last_index = this.element_mirror.length - 1;
+        const moved_element = this.element_mirror[last_index];
+
+        // Update CPU mirror
+        this.element_mirror[element.index] = moved_element;
+        moved_element.index = element.index;
+        this.element_mirror.splice(last_index, 1);  // Remove the other copy of the moved element
+
+        // Update element on GPU
+        gl.bufferSubData(gl.ARRAY_BUFFER, moved_element.index * this.word_size, moved_element.buffer);
     }
 
-    setElement() {
-        throw "Not implemented";  // TODO
+    setElement(gl: GlCtx, element: ReadonlyGpuSetElement, data: ArrayBuffer) {
+        // Update CPU mirror
+        (element as GpuSetElement).buffer = data;
+
+        // Update element on GPU
+        gl.bufferSubData(gl.ARRAY_BUFFER, element.index * this.word_size, data);
     }
 }

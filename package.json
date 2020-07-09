@@ -1,0 +1,29 @@
+{
+  "name": "voxel-engine-rewritten",
+  "version": "1.0.0",
+  "description": "A complete rewrite my voxel-engine project.",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radbuglet/voxel-engine-rewritten.git"
+  },
+  "keywords": [
+    "voxel",
+    "WebGL",
+    "game"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/radbuglet/voxel-engine-rewritten/issues"
+  },
+  "homepage": "https://github.com/radbuglet/voxel-engine-rewritten#readme",
+  "devDependencies": {
+    "@types/gl-matrix": "^2.4.5",
+    "gl-matrix": "^3.3.0",
+    "typescript": "^3.9.6"
+  }
+}

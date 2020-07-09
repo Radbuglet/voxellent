@@ -12,11 +12,7 @@ export function validateVec(vec: Iterable<number>, validator: (v: number) => boo
 }
 
 export function isIntVec(vec: Iterable<number>) {
-    return validateVec(vec, v => Number.isInteger(v));
-}
-
-export function isVecInCubicRange(vec: Iterable<number>, size: number) {
-    return validateVec(vec, v => Number.isInteger(v) && v >= 0 && v <= size - 1);
+    return validateVec(vec, Number.isInteger);
 }
 
 export function getVectorKey(vec: vec3): VectorKey {

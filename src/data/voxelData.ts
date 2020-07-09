@@ -1,6 +1,7 @@
-import {FaceUtils, VoxelFace} from "../helpers/face";
+import {FaceUtils, VoxelFace} from "./math/face";
 import {vec3} from "gl-matrix";
-import {getVectorKey, isVecInCubicRange, isIntVec, VectorKey} from "../helpers/math";
+import {getVectorKey, isIntVec, VectorKey} from "./math/math";
+import {ChunkIndex} from "./math/chunkIndex";
 
 // TODO: Voxel pointers, traversal and building utilities
 // TODO: Ray casts and rigid bodies
@@ -60,22 +61,17 @@ export class VoxelChunk<TWrapped> {
         return this.neighbors[face];
     }
 
-    private getVoxelIndex(pos: vec3) {
-        console.assert(isVecInCubicRange(pos, this.chunk_size));
-        return (pos[0] + pos[1] * this.chunk_size + pos[2] * this.chunk_size ** 2) * 2;
+    setVoxel(pos: ChunkIndex, type: number, data: number) {
+        pos *= 2;  // Two shorts per voxel
+        this.data[pos] = type;
+        this.data[pos + 1] = data;
     }
 
-    setVoxel(pos: vec3, type: number, data: number) {
-        const root = this.getVoxelIndex(pos);
-        this.data[root] = type;
-        this.data[root + 1] = data;
-    }
-
-    getVoxelRaw(pos: vec3): { type: number, data: number } {
-        const root = this.getVoxelIndex(pos);
+    getVoxelRaw(pos: ChunkIndex): { type: number, data: number } {
+        pos *= 2;  // Two shorts per voxel
         return {
-            type: this.data[root],
-            data: this.data[root + 1]
+            type: this.data[pos],
+            data: this.data[pos + 1]
         };
     }
 }

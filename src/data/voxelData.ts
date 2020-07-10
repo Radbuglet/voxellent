@@ -4,14 +4,17 @@ import {getVectorKey, isIntVec, VectorKey} from "./math/math";
 import {BITS_PER_CHUNK_COMP, CHUNK_SIZE, ChunkIndex} from "./math/chunkIndex";
 
 // TODO: Traversal utilities, ray casts and rigid bodies
-export class VoxelWorld<TWrapped = never> {
-    private readonly chunks = new Map<VectorKey, VoxelChunk<TWrapped>>();
+type UntypedVoxelChunkWrapper = VoxelChunkWrapper;
+export interface VoxelChunkWrapper<TWrapper extends VoxelChunkWrapper<TWrapper> = UntypedVoxelChunkWrapper> {
+    chunk_data: VoxelChunk<TWrapper>
+}
+
+export class VoxelWorld<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper> = VoxelChunkWrapper> {
+    private readonly chunks = new Map<VectorKey, TChunkWrapper>();
 
     // Chunk management
-    addChunk(pos: vec3, wrapped_instance: TWrapped, voxel_byte_size: number): VoxelChunk<TWrapped> {
+    addChunk(pos: vec3, instance: TChunkWrapper) {
         console.assert(!this.chunks.has(getVectorKey(pos)) && isIntVec(pos));
-
-        const instance = new VoxelChunk(wrapped_instance, voxel_byte_size);
         this.chunks.set(getVectorKey(pos), instance);
 
         // Link with neighbors
@@ -24,13 +27,11 @@ export class VoxelWorld<TWrapped = never> {
             // Find neighbor and link
             const neighbor = this.chunks.get(getVectorKey(pos));
             if (neighbor != null)
-                instance.linkToNeighbor(face, neighbor);
+                instance.chunk_data.linkToNeighbor(face, instance, neighbor);
 
             // Revert position vector to original state
             pos[axis] -= sign;
         }
-
-        return instance;
     }
 
     removeChunk(pos: vec3) {
@@ -50,7 +51,7 @@ export class VoxelWorld<TWrapped = never> {
         return { inner, outer: target_vec_outer };
     }
 
-    getVoxel(pos: vec3, target: VoxelPointer<TWrapped> = new VoxelPointer<TWrapped>()): VoxelPointer<TWrapped> {
+    getVoxel(pos: vec3, target: VoxelPointer<TChunkWrapper> = new VoxelPointer<TChunkWrapper>()): VoxelPointer<TChunkWrapper> {
         const { inner } = VoxelWorld.decodePosition(pos, target.outer_pos);
         target.inner_pos = inner;
         target.chunk = this.getChunk(target.outer_pos);
@@ -58,18 +59,18 @@ export class VoxelWorld<TWrapped = never> {
     }
 }
 
-export class VoxelChunk<TWrapped = never> {
-    private readonly neighbors: (VoxelChunk<TWrapped> | undefined)[] = new Array(6);
+export class VoxelChunk<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper> = VoxelChunkWrapper> {
+    private readonly neighbors: (TChunkWrapper | undefined)[] = new Array(6);
     private readonly data: ArrayBuffer;
 
-    constructor(public readonly parent: TWrapped, private readonly voxel_byte_size: number) {
+    constructor(private readonly voxel_byte_size: number) {
         this.data = new ArrayBuffer(voxel_byte_size * CHUNK_SIZE ** 3);
     }
 
     // Neighbor management
-    linkToNeighbor(face: VoxelFace, other: VoxelChunk<TWrapped>) {
+    linkToNeighbor(face: VoxelFace, self: TChunkWrapper, other: TChunkWrapper) {
         this.neighbors[face] = other;
-        other.neighbors[FaceUtils.getInverse(face)] = this;
+        other.chunk_data.neighbors[FaceUtils.getInverse(face)] = self;
     }
 
     getNeighbor(face: VoxelFace) {
@@ -82,30 +83,30 @@ export class VoxelChunk<TWrapped = never> {
     }
 }
 
-export class VoxelPointer<TWrapped = never> {
-    constructor(public outer_pos: vec3 = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk?: VoxelChunk<TWrapped>) {}
+export class VoxelPointer<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper> = VoxelChunkWrapper> {
+    constructor(public outer_pos: vec3 = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk?: TChunkWrapper) {}
 
-    attemptReattach(world: VoxelWorld<TWrapped>): boolean {
+    attemptReattach(world: VoxelWorld<TChunkWrapper>): boolean {
         this.chunk = world.getChunk(this.outer_pos);
         return this.chunk != null;
     }
 
     getData() {
-        return this.chunk == null ? null : this.chunk.getVoxelRaw(this.inner_pos);
+        return this.chunk == null ? null : this.chunk.chunk_data.getVoxelRaw(this.inner_pos);
     }
 
-    getNeighbor(world: VoxelWorld<TWrapped>, face: VoxelFace, jump_size: number) {
+    getNeighbor(world: VoxelWorld<TChunkWrapper>, face: VoxelFace, jump_size: number) {
         const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, FaceUtils.getAxis(face), FaceUtils.getSign(face) * jump_size);
         this.inner_pos = index;
         for (let i = 0; i < traversed_chunks && this.chunk != null; i++) {
-            this.chunk = this.chunk.getNeighbor(face);
+            this.chunk = this.chunk.chunk_data.getNeighbor(face);
         }
         if (this.chunk == null) {
             this.attemptReattach(world);
         }
     }
 
-    getWorldPos(world: VoxelWorld<TWrapped>, target: vec3 = vec3.create()): vec3 {
+    getWorldPos(world: VoxelWorld<TChunkWrapper>, target: vec3 = vec3.create()): vec3 {
         target[0] = this.outer_pos[0] << BITS_PER_CHUNK_COMP;
         target[1] = this.outer_pos[1] << BITS_PER_CHUNK_COMP;
         target[2] = this.outer_pos[2] << BITS_PER_CHUNK_COMP;
@@ -113,15 +114,15 @@ export class VoxelPointer<TWrapped = never> {
         return ChunkIndex.addToVector(this.inner_pos, target);
     }
 
-    setWorldPos(world: VoxelWorld<TWrapped>, pos: vec3) {
+    setWorldPos(world: VoxelWorld<TChunkWrapper>, pos: vec3) {
         throw "Not implemented";
     }
 
     clone() {
-        return new VoxelPointer<TWrapped>(this.outer_pos, this.inner_pos, this.chunk);
+        return new VoxelPointer<TChunkWrapper>(this.outer_pos, this.inner_pos, this.chunk);
     }
 
-    copyTo(target: VoxelPointer<TWrapped>) {
+    copyTo(target: VoxelPointer<TChunkWrapper>) {
         target.outer_pos = this.outer_pos;
         target.inner_pos = this.inner_pos;
         target.chunk = this.chunk;

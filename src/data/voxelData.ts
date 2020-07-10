@@ -94,15 +94,26 @@ export class VoxelPointer<TWrapped = never> {
         return this.chunk == null ? null : this.chunk.getVoxelRaw(this.inner_pos);
     }
 
-    getNeighbor(face: VoxelFace, jump_size: number) {
-        throw "Not implemented";
+    getNeighbor(world: VoxelWorld<TWrapped>, face: VoxelFace, jump_size: number) {
+        const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, FaceUtils.getAxis(face), FaceUtils.getSign(face) * jump_size);
+        this.inner_pos = index;
+        for (let i = 0; i < traversed_chunks && this.chunk != null; i++) {
+            this.chunk = this.chunk.getNeighbor(face);
+        }
+        if (this.chunk == null) {
+            this.attemptReattach(world);
+        }
     }
 
-    setWorldPos(pos: vec3) {
-        throw "Not implemented";
+    getWorldPos(world: VoxelWorld<TWrapped>, target: vec3 = vec3.create()): vec3 {
+        target[0] = this.outer_pos[0] << BITS_PER_CHUNK_COMP;
+        target[1] = this.outer_pos[1] << BITS_PER_CHUNK_COMP;
+        target[2] = this.outer_pos[2] << BITS_PER_CHUNK_COMP;
+        this.attemptReattach(world);
+        return ChunkIndex.addToVector(this.inner_pos, target);
     }
 
-    getWorldPos(target: vec3 = vec3.create()): vec3 {
+    setWorldPos(world: VoxelWorld<TWrapped>, pos: vec3) {
         throw "Not implemented";
     }
 

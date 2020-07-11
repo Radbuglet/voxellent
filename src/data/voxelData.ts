@@ -6,7 +6,7 @@ import {BITS_PER_CHUNK_COMP, CHUNK_SIZE, ChunkIndex} from "./math/chunkIndex";
 // TODO: Traversal utilities, ray casts and rigid bodies
 type UntypedVoxelChunkWrapper = VoxelChunkWrapper;
 export interface VoxelChunkWrapper<TWrapper extends VoxelChunkWrapper<TWrapper> = UntypedVoxelChunkWrapper> {
-    chunk_data: VoxelChunk<TWrapper>
+    readonly voxel_data: VoxelChunk<TWrapper>
 }
 
 export class VoxelWorld<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper> = VoxelChunkWrapper> {
@@ -27,7 +27,7 @@ export class VoxelWorld<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper> =
             // Find neighbor and link
             const neighbor = this.chunks.get(getVectorKey(pos));
             if (neighbor != null)
-                instance.chunk_data.linkToNeighbor(face, instance, neighbor);
+                instance.voxel_data.linkToNeighbor(face, instance, neighbor);
 
             // Revert position vector to original state
             pos[axis] -= sign;
@@ -70,7 +70,7 @@ export class VoxelChunk<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper> =
     // Neighbor management
     linkToNeighbor(face: VoxelFace, self: TChunkWrapper, other: TChunkWrapper) {
         this.neighbors[face] = other;
-        other.chunk_data.neighbors[FaceUtils.getInverse(face)] = self;
+        other.voxel_data.neighbors[FaceUtils.getInverse(face)] = self;
     }
 
     getNeighbor(face: VoxelFace) {
@@ -92,14 +92,14 @@ export class VoxelPointer<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper>
     }
 
     getData() {
-        return this.chunk == null ? null : this.chunk.chunk_data.getVoxelRaw(this.inner_pos);
+        return this.chunk == null ? null : this.chunk.voxel_data.getVoxelRaw(this.inner_pos);
     }
 
     getNeighbor(world: VoxelWorld<TChunkWrapper>, face: VoxelFace, jump_size: number) {
         const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, FaceUtils.getAxis(face), FaceUtils.getSign(face) * jump_size);
         this.inner_pos = index;
         for (let i = 0; i < traversed_chunks && this.chunk != null; i++) {
-            this.chunk = this.chunk.chunk_data.getNeighbor(face);
+            this.chunk = this.chunk.voxel_data.getNeighbor(face);
         }
         if (this.chunk == null) {
             this.attemptReattach(world);

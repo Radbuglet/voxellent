@@ -1,4 +1,4 @@
-import {Sign} from "./math";
+import {Sign} from "../utils/math";
 
 export enum Axis {
     x, y, z

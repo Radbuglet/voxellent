@@ -1,7 +1,7 @@
-import {FaceUtils, VoxelFace} from "./math/face";
+import {FaceUtils, VoxelFace} from "./face";
 import {vec3} from "gl-matrix";
-import {getVectorKey, isIntVec, VectorKey} from "./math/math";
-import {BITS_PER_CHUNK_COMP, CHUNK_SIZE, ChunkIndex} from "./math/chunkIndex";
+import {getVectorKey, isIntVec, VectorKey} from "../utils/math";
+import {BITS_PER_CHUNK_COMP, CHUNK_SIZE, ChunkIndex} from "./chunkIndex";
 
 // TODO: Traversal utilities, ray casts and rigid bodies
 type UntypedVoxelChunkWrapper = VoxelChunkWrapper;
@@ -59,8 +59,8 @@ export class VoxelWorld<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper> =
     }
 }
 
-export class VoxelChunk<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper> = VoxelChunkWrapper> {
-    private readonly neighbors: (TChunkWrapper | undefined)[] = new Array(6);
+export class VoxelChunk<TNeighbor extends VoxelChunkWrapper<TNeighbor> = VoxelChunkWrapper> {
+    private readonly neighbors: (TNeighbor | undefined)[] = new Array(6);
     private readonly data: ArrayBuffer;
 
     constructor(private readonly voxel_byte_size: number) {
@@ -68,7 +68,7 @@ export class VoxelChunk<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper> =
     }
 
     // Neighbor management
-    linkToNeighbor(face: VoxelFace, self: TChunkWrapper, other: TChunkWrapper) {
+    linkToNeighbor(face: VoxelFace, self: TNeighbor, other: TNeighbor) {
         this.neighbors[face] = other;
         other.voxel_data.neighbors[FaceUtils.getInverse(face)] = self;
     }
@@ -83,10 +83,10 @@ export class VoxelChunk<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper> =
     }
 }
 
-export class VoxelPointer<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper> = VoxelChunkWrapper> {
-    constructor(public outer_pos: vec3 = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk?: TChunkWrapper) {}
+export class VoxelPointer<TChunk extends VoxelChunkWrapper<TChunk> = VoxelChunkWrapper> {
+    constructor(public outer_pos: vec3 = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk?: TChunk) {}
 
-    attemptReattach(world: VoxelWorld<TChunkWrapper>): boolean {
+    attemptReattach(world: VoxelWorld<TChunk>): boolean {
         this.chunk = world.getChunk(this.outer_pos);
         return this.chunk != null;
     }
@@ -95,7 +95,7 @@ export class VoxelPointer<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper>
         return this.chunk == null ? null : this.chunk.voxel_data.getVoxelRaw(this.inner_pos);
     }
 
-    getNeighbor(world: VoxelWorld<TChunkWrapper>, face: VoxelFace, jump_size: number) {
+    getNeighbor(world: VoxelWorld<TChunk>, face: VoxelFace, jump_size: number) {
         const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, FaceUtils.getAxis(face), FaceUtils.getSign(face) * jump_size);
         this.inner_pos = index;
         for (let i = 0; i < traversed_chunks && this.chunk != null; i++) {
@@ -106,7 +106,7 @@ export class VoxelPointer<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper>
         }
     }
 
-    getWorldPos(world: VoxelWorld<TChunkWrapper>, target: vec3 = vec3.create()): vec3 {
+    getWorldPos(world: VoxelWorld<TChunk>, target: vec3 = vec3.create()): vec3 {
         target[0] = this.outer_pos[0] << BITS_PER_CHUNK_COMP;
         target[1] = this.outer_pos[1] << BITS_PER_CHUNK_COMP;
         target[2] = this.outer_pos[2] << BITS_PER_CHUNK_COMP;
@@ -114,15 +114,15 @@ export class VoxelPointer<TChunkWrapper extends VoxelChunkWrapper<TChunkWrapper>
         return ChunkIndex.addToVector(this.inner_pos, target);
     }
 
-    setWorldPos(world: VoxelWorld<TChunkWrapper>, pos: vec3) {
+    setWorldPos(world: VoxelWorld<TChunk>, pos: vec3) {
         throw "Not implemented";
     }
 
     clone() {
-        return new VoxelPointer<TChunkWrapper>(this.outer_pos, this.inner_pos, this.chunk);
+        return new VoxelPointer<TChunk>(this.outer_pos, this.inner_pos, this.chunk);
     }
 
-    copyTo(target: VoxelPointer<TChunkWrapper>) {
+    copyTo(target: VoxelPointer<TChunk>) {
         target.outer_pos = this.outer_pos;
         target.inner_pos = this.inner_pos;
         target.chunk = this.chunk;

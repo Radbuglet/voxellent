@@ -8,10 +8,11 @@ export interface RenderingDefinition<TChunk, TLayers extends Record<string, Chun
 
 export interface ChunkMeshLayer {
     render(gl: GlCtx): void;
-    free(): void;
+    free(gl: GlCtx): void;
 }
 
 export class ChunkMesher<TChunk> {
+    public static type = Symbol();
     private readonly layers = new Map<RecordKey, ChunkMeshLayer>();
 
     constructor(private readonly renderer: RenderingDefinition<TChunk>) {}
@@ -28,7 +29,9 @@ export class ChunkMesher<TChunk> {
         
     }
 
-    free() {
-
+    free(gl: GlCtx) {
+        for (const layer of this.layers.values()) {
+            layer.free(gl);
+        }
     }
 }

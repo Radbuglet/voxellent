@@ -25,5 +25,8 @@
     "@types/gl-matrix": "^2.4.5",
     "gl-matrix": "^3.3.0",
     "typescript": "^3.9.6"
+  },
+  "dependencies": {
+    "ts-providers": "^0.2.0"
   }
 }

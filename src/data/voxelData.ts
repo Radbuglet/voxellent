@@ -79,10 +79,6 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         return this.chunk != null;
     }
 
-    getData() {
-        return this.chunk == null ? null : this.chunk[VoxelChunk.type].getVoxelRaw(this.inner_pos);
-    }
-
     getNeighbor(world: VoxelWorld<TChunk>, face: VoxelFace, jump_size: number) {
         const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, FaceUtils.getAxis(face), FaceUtils.getSign(face) * jump_size);
         this.inner_pos = index;
@@ -98,7 +94,6 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         target[0] = this.outer_pos[0] << BITS_PER_CHUNK_COMP;
         target[1] = this.outer_pos[1] << BITS_PER_CHUNK_COMP;
         target[2] = this.outer_pos[2] << BITS_PER_CHUNK_COMP;
-        this.attemptReattach(world);
         return ChunkIndex.addToVector(this.inner_pos, target);
     }
 

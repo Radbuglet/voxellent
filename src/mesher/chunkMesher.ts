@@ -1,37 +1,51 @@
-import {ChunkIndex} from "../data/chunkIndex";
-import {GlCtx, RecordKey} from "../utils/aliases";
+import {VoxelFace} from "../data/face";
+import {P$} from "ts-providers";
+import {VoxelChunk} from "../data/voxelData";
 
-export interface RenderingDefinition<TChunk, TLayers extends Record<string, ChunkMeshLayer> = {}> {
-    readonly layer_factories: { [K in keyof TLayers]: (gl: GlCtx) => TLayers[K] };
-    renderChunk(chunk: TChunk, getLayer: <T extends keyof TLayers>(key: T, weak?: boolean) => TLayers[T]): void;
+// Mesh infrastructure
+export interface MesherBaseContext<TCtx extends MesherBaseContext<TCtx>> {
+    readonly meshing_queue: WorldMeshingQueue<TCtx>
 }
 
-export interface ChunkMeshLayer {
-    render(gl: GlCtx): void;
-    free(gl: GlCtx): void;
-}
+export class WorldMeshingQueue<TCtx extends MesherBaseContext<TCtx>> {
+    private readonly meshers = new Set<ChunkMesher<TCtx>>();
 
-export class ChunkMesher<TChunk> {
-    public static type = Symbol();
-    private readonly layers = new Map<RecordKey, ChunkMeshLayer>();
-
-    constructor(private readonly renderer: RenderingDefinition<TChunk>) {}
-
-    makeDirty(index: ChunkIndex) {
-
+    addChunk(mesher: ChunkMesher<TCtx>) {
+        this.meshers.add(mesher);
     }
 
-    uploadBuffers(gl: GlCtx) {
-
-    }
-
-    render(gl: GlCtx) {
-        
-    }
-
-    free(gl: GlCtx) {
-        for (const layer of this.layers.values()) {
-            layer.free(gl);
+    updateChunks(ctx: TCtx) {
+        for (const mesher of this.meshers) {
+            mesher.updateChunk(ctx);
         }
+        this.meshers.clear();
+    }
+}
+
+// Meshing instance
+type ContainerBase<TCtx extends MesherBaseContext<TCtx>> = P$<typeof VoxelChunk, VoxelChunk<ContainerBase<TCtx>>> &
+    P$<typeof ChunkMesher, ChunkMesher<TCtx>>;
+
+export abstract class ChunkMesher<TCtx extends MesherBaseContext<TCtx>> {
+    public static readonly type = Symbol();
+
+    protected abstract handleUpdateDirect(ctx: TCtx): void;
+    protected abstract handleUpdateBatch(ctx: TCtx): void;
+    protected abstract free(ctx: TCtx): void;
+
+    protected constructor(private readonly chunk: ContainerBase<TCtx>) {}
+
+    protected flagDirtyNeighbor(ctx: TCtx, face: VoxelFace) {
+        const neighbor = this.chunk[VoxelChunk.type].getNeighbor(face);
+        if (neighbor != null)
+            ctx.meshing_queue.addChunk(neighbor[ChunkMesher.type]);
+    }
+
+    updateVoxel(ctx: TCtx) {
+        throw "Not implemented";
+    }
+
+    updateChunk(ctx: TCtx) {
+        throw "Not implemented";
     }
 }

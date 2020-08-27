@@ -11,6 +11,10 @@ export enum VoxelFace {
 }
 
 export const FaceUtils = new (class {
+    fromParts(axis: Axis, sign: Sign): VoxelFace {
+        return axis << 1 + (sign === 1 ? 0 : 1);
+    }
+
     getInverse(face: VoxelFace): VoxelFace {
         // All positive faces have a parity of zero whereas all negative faces have a parity of one.
         // Therefore, to get the inverse of a face, we just flip the least significant bit.
@@ -28,6 +32,12 @@ export const FaceUtils = new (class {
 
     *getFaces(): IterableIterator<VoxelFace> {
         for (let i = 0; i < 6; i++) {
+            yield i;
+        }
+    }
+
+    *getAxes(): IterableIterator<Axis> {
+        for (let i = 0; i < 3; i++) {
             yield i;
         }
     }

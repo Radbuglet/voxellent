@@ -80,7 +80,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     getNeighbor(world: VoxelWorld<TChunk>, face: VoxelFace, jump_size: number) {
-        const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, FaceUtils.getAxis(face), FaceUtils.getSign(face) * jump_size);
+        const { index, traversed_chunks } = ChunkIndex.addFace(this.inner_pos, face, jump_size);
         this.inner_pos = index;
         for (let i = 0; i < traversed_chunks && this.chunk != null; i++) {
             this.chunk = this.chunk[VoxelChunk.type].getNeighbor(face);

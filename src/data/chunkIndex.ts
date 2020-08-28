@@ -3,6 +3,7 @@ import {vec3} from "gl-matrix";
 
 export const BITS_PER_CHUNK_COMP = 4;
 export const CHUNK_SIZE = 2 ** BITS_PER_CHUNK_COMP;
+export const CHUNK_VOXEL_COUNT = CHUNK_SIZE ** 3;
 
 export type ChunkIndex = number;
 export const ChunkIndex = new (class {
@@ -32,8 +33,8 @@ export const ChunkIndex = new (class {
         };
     }
 
-    addFace(index: ChunkIndex, face: VoxelFace) {
-        return this.add(index, FaceUtils.getAxis(face), FaceUtils.getSign(face));
+    addFace(index: ChunkIndex, face: VoxelFace, delta: number = 1) {
+        return this.add(index, FaceUtils.getAxis(face), FaceUtils.getSign(face) * delta);
     }
 
     getEdgeFace(index: ChunkIndex, axis: Axis): VoxelFace | null {
@@ -44,6 +45,12 @@ export const ChunkIndex = new (class {
             return FaceUtils.fromParts(axis, 1);
         } else {
             return null;
+        }
+    }
+
+    *iterateAllIndices(): IterableIterator<ChunkIndex> {
+        for (let i = 0; i < CHUNK_VOXEL_COUNT; i++) {
+            yield i;
         }
     }
 })();

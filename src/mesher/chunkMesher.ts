@@ -1,61 +1,52 @@
-import {VoxelFace, Axis, FaceUtils} from "../data/face";
+import {VoxelFace, FaceUtils} from "../data/face";
 import {P$} from "ts-providers";
 import {VoxelChunk} from "../data/voxelData";
 import {ChunkIndex} from "../data/chunkIndex";
 
-// Mesh infrastructure
-export interface MesherBaseContext<TCtx extends MesherBaseContext<TCtx>> {
-    readonly meshing_queue: WorldMeshingQueue<TCtx>
+type DirtyChunk<TCtx> = UpdatableChunkMesh<TCtx> & P$<typeof VoxelChunk, VoxelChunk<DirtyChunk<TCtx>>>;
+
+export interface UpdatableChunkMesh<TCtx> {
+    updateChunk(ctx: TCtx): void;
 }
 
-export class WorldMeshingQueue<TCtx extends MesherBaseContext<TCtx>> {
-    private readonly meshers = new Set<ChunkMesher<TCtx>>();
+export class ChunkMeshingQueue<TCtx> {
+    private readonly dirty = new Set<DirtyChunk<TCtx>>();
 
-    addChunk(mesher: ChunkMesher<TCtx>) {
-        this.meshers.add(mesher);
+    flagChunk(chunk: DirtyChunk<TCtx>) {
+        this.dirty.add(chunk);
     }
 
-    updateChunks(ctx: TCtx) {
-        for (const mesher of this.meshers) {
-            mesher.updateChunk(ctx);
-        }
-        this.meshers.clear();
+    flagChunkNeighbor(chunk: DirtyChunk<TCtx>, face: VoxelFace) {
+        const neighbor = chunk[VoxelChunk.type].getNeighbor(face);
+        if (neighbor != null)
+            this.flagChunk(neighbor);
     }
-}
 
-// Meshing instance
-type ContainerBase<TCtx extends MesherBaseContext<TCtx>> = P$<typeof VoxelChunk, VoxelChunk<ContainerBase<TCtx>>> &
-    P$<typeof ChunkMesher, ChunkMesher<TCtx>>;
-
-export abstract class ChunkMesher<TCtx extends MesherBaseContext<TCtx>> {
-    public static readonly type = Symbol();
-
-    protected constructor(private readonly chunk: ContainerBase<TCtx>) {}
-
-    protected flagDirtyVoxelNeighbor(ctx: TCtx, location: ChunkIndex, face: VoxelFace) {
-        if (ChunkIndex.addFace(location, face).traversed_chunks > 1) {
-            this.flagDirtyChunkNeighbor(ctx, face);
+    flagVoxelFace(chunk: DirtyChunk<TCtx>, voxel: ChunkIndex, face: VoxelFace) {
+        if (ChunkIndex.addFace(voxel, face).traversed_chunks > 1) {
+            this.flagChunkNeighbor(chunk, face);
+        } else {
+            this.flagChunk(chunk);
         }
     }
 
-    protected flagDirtyVoxelNeighbors(ctx: TCtx, location: ChunkIndex) {
+    flagVoxelFaces(chunk: DirtyChunk<TCtx>, voxel: ChunkIndex) {
+        let flagged_self = false;
         for (const axis of FaceUtils.getAxes()) {
-            const face = ChunkIndex.getEdgeFace(location, axis);
+            const face = ChunkIndex.getEdgeFace(voxel, axis);
             if (face != null) {
-                this.flagDirtyChunkNeighbor(ctx, face);
+                this.flagChunkNeighbor(chunk, face);
+            } else if (!flagged_self) {
+                this.flagChunk(chunk);
+                flagged_self = true;
             }
         }
     }
 
-    protected flagDirtyChunkNeighbor(ctx: TCtx, face: VoxelFace) {
-        const neighbor = this.chunk[VoxelChunk.type].getNeighbor(face);
-        if (neighbor != null)
-            ctx.meshing_queue.addChunk(neighbor[ChunkMesher.type]);
+    updateChunks(ctx: TCtx) {
+        for (const mesher of this.dirty) {
+            mesher.updateChunk(ctx);
+        }
+        this.dirty.clear();
     }
-
-    public abstract updateVoxel(ctx: TCtx, location: ChunkIndex): void;
-
-    public abstract updateChunk(ctx: TCtx): void;
-
-    public abstract free(ctx: TCtx): void;
 }

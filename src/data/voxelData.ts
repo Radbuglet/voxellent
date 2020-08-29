@@ -2,7 +2,7 @@ import {vec3} from "gl-matrix";
 import {P$} from "ts-providers";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VectorKey, VecUtils} from "../utils/vecUtils";
-import {BITS_PER_CHUNK_COMP, CHUNK_SIZE, ChunkIndex} from "./chunkIndex";
+import {BITS_PER_CHUNK_COMP, CHUNK_EDGE_SIZE, ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
 
 export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     public static readonly type = Symbol();
@@ -59,7 +59,7 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
     public outer_pos = vec3.create();
 
     constructor(private readonly bytes_per_voxel: number) {
-        this.data = new ArrayBuffer(bytes_per_voxel * CHUNK_SIZE ** 3);
+        this.data = new ArrayBuffer(bytes_per_voxel * CHUNK_EDGE_SIZE ** 3);
     }
 
     // Neighbor management
@@ -81,11 +81,30 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
 export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     constructor(public outer_pos: vec3 = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk?: TChunk) {}
 
+    // Position management
     attemptReattach(world: VoxelWorld<TChunk>): boolean {
         this.chunk = world.getChunk(this.outer_pos);
         return this.chunk != null;
     }
 
+    getWorldPos(world: VoxelWorld<TChunk>, target: vec3 = vec3.create()): vec3 {
+        return ChunkIndex.addToVector(this.inner_pos,
+            WorldSpaceUtils.chunkOuterGetWsRoot(this.outer_pos, target));
+    }
+
+    setWorldPos(world: VoxelWorld<TChunk>, pos: vec3) {
+        WorldSpaceUtils.wsGetChunkOuter(pos, this.outer_pos);
+        this.chunk = world.getChunk(this.outer_pos);
+        this.inner_pos = WorldSpaceUtils.wsGetChunkIndex(pos);
+    }
+
+    setPosInChunk(chunk: TChunk, index: ChunkIndex) {
+        vec3.copy(this.outer_pos, chunk[VoxelChunk.type].outer_pos);
+        this.inner_pos = index;
+        this.chunk = chunk;
+    }
+
+    // Neighbors
     getNeighborDirect(face: VoxelFace, target: VoxelPointer<TChunk> = this): VoxelPointer<TChunk> {
         const axis = FaceUtils.getAxis(face);
         const sign = FaceUtils.getSign(face);
@@ -117,27 +136,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         return target;
     }
 
-    getWorldPos(world: VoxelWorld<TChunk>, target: vec3 = vec3.create()): vec3 {
-        target[0] = this.outer_pos[0] << BITS_PER_CHUNK_COMP;
-        target[1] = this.outer_pos[1] << BITS_PER_CHUNK_COMP;
-        target[2] = this.outer_pos[2] << BITS_PER_CHUNK_COMP;
-        return ChunkIndex.addToVector(this.inner_pos, target);
-    }
-
-    setWorldPos(world: VoxelWorld<TChunk>, pos: vec3) {
-        this.inner_pos = ChunkIndex.fromVector(pos[0] & CHUNK_SIZE, pos[1] & CHUNK_SIZE, pos[2] & CHUNK_SIZE);
-        this.outer_pos[0] = pos[0] >> BITS_PER_CHUNK_COMP;
-        this.outer_pos[1] = pos[1] >> BITS_PER_CHUNK_COMP;
-        this.outer_pos[2] = pos[2] >> BITS_PER_CHUNK_COMP;
-        this.chunk = world.getChunk(this.outer_pos);
-    }
-
-    setPosInChunk(chunk: TChunk, index: ChunkIndex) {
-        vec3.copy(this.outer_pos, chunk[VoxelChunk.type].outer_pos);
-        this.inner_pos = index;
-        this.chunk = chunk;
-    }
-
+    // Memory management
     clone() {
         return new VoxelPointer<TChunk>(this.outer_pos, this.inner_pos, this.chunk);
     }

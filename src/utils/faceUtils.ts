@@ -1,4 +1,4 @@
-import {Sign} from "../utils/math";
+import {Sign} from "./vecUtils";
 
 export enum Axis {
     x, y, z

@@ -1,4 +1,4 @@
-import {Axis, FaceUtils, VoxelFace} from "./face";
+import {Axis, FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {vec3} from "gl-matrix";
 
 export const BITS_PER_CHUNK_COMP = 4;

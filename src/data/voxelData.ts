@@ -1,7 +1,7 @@
 import {vec3} from "gl-matrix";
 import {P$} from "ts-providers";
-import {FaceUtils, VoxelFace} from "./face";
-import {getVectorKey, isIntVec, VectorKey} from "../utils/math";
+import {FaceUtils, VoxelFace} from "../utils/faceUtils";
+import {VectorKey, VecUtils} from "../utils/vecUtils";
 import {BITS_PER_CHUNK_COMP, CHUNK_SIZE, ChunkIndex} from "./chunkIndex";
 
 export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
@@ -10,8 +10,8 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
 
     // Chunk management
     addChunk(pos: vec3, instance: TChunk) {
-        console.assert(!this.chunks.has(getVectorKey(pos)) && isIntVec(pos));
-        this.chunks.set(getVectorKey(pos), instance);
+        console.assert(!this.chunks.has(VecUtils.getVectorKey(pos)) && VecUtils.isIntVec(pos));
+        this.chunks.set(VecUtils.getVectorKey(pos), instance);
         instance[VoxelChunk.type].outer_pos = pos;
 
         // Link with neighbors
@@ -22,7 +22,7 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
             pos[axis] += sign;
 
             // Find neighbor and link
-            const neighbor = this.chunks.get(getVectorKey(pos));
+            const neighbor = this.chunks.get(VecUtils.getVectorKey(pos));
             if (neighbor != null)
                 instance[VoxelChunk.type].linkToNeighbor(face, instance, neighbor);
 
@@ -32,11 +32,11 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
     }
 
     removeChunk(pos: vec3) {
-        return this.chunks.delete(getVectorKey(pos));
+        return this.chunks.delete(VecUtils.getVectorKey(pos));
     }
 
     getChunk(pos: vec3) {
-        return this.chunks.get(getVectorKey(pos));
+        return this.chunks.get(VecUtils.getVectorKey(pos));
     }
 
     // Voxel lookups

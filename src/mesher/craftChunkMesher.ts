@@ -1,11 +1,11 @@
 import {VoxelChunk, VoxelPointer} from "../data/voxelData";
 import {P$} from "ts-providers";
 import {ChunkIndex} from "../data/chunkIndex";
-import {FaceUtils, VoxelFace} from "../data/face";
-import {Rect2} from "../utils/rect2";
+import {FaceUtils, VoxelFace} from "../utils/faceUtils";
+import {Rect2, RectUtils} from "../utils/rect2";
 
 export type CraftVoxelMesh<TCtx, TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> = {
-    [_ in VoxelFace]: { rect: Rect2, generateMesh: (ctx: TCtx, location: VoxelPointer<TChunk>, face: VoxelFace) => void }
+    [_ in VoxelFace]: null | { rect: Rect2, generateMesh: (ctx: TCtx, location: VoxelPointer<TChunk>, face: VoxelFace) => void }
 } & {
     generateInstance?: (ctx: TCtx, location: VoxelPointer<TChunk>) => void
 };
@@ -25,17 +25,23 @@ export function createCraftChunkMesh<TCtx, TChunk extends P$<typeof VoxelChunk, 
 
         // Create faces
         for (const face of FaceUtils.getFaces()) {
+            const own_mesh_face = own_mesh[face];
+            if (own_mesh_face == null) continue;
+
             // Parse neighbor
             pointer_target.getNeighborDirect(face, pointer_lookup);
             const neighbor_mesh = decodeVoxel(pointer_target);
 
             // Determine whether or not our face should exist
-            if (neighbor_mesh == null) {
-                // TODO
+            if (neighbor_mesh != null) {
+                const neighbor_occ_face = neighbor_mesh[FaceUtils.getInverse(face)];
+                if (neighbor_occ_face != null && RectUtils.contains(neighbor_occ_face.rect, own_mesh_face.rect)) {
+                    continue;  // We can't be visible making this a redundant face.
+                }
             }
 
             // Generate the face!
-            own_mesh[face].generateMesh(ctx, pointer_target, face);
+            own_mesh_face.generateMesh(ctx, pointer_target, face);
         }
 
         // Create instance mesh

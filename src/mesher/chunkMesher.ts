@@ -1,4 +1,4 @@
-import {VoxelFace, FaceUtils} from "../data/face";
+import {VoxelFace, FaceUtils} from "../utils/faceUtils";
 import {P$} from "ts-providers";
 import {VoxelChunk} from "../data/voxelData";
 import {ChunkIndex} from "../data/chunkIndex";

@@ -12,6 +12,7 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
     addChunk(pos: vec3, instance: TChunk) {
         console.assert(!this.chunks.has(getVectorKey(pos)) && isIntVec(pos));
         this.chunks.set(getVectorKey(pos), instance);
+        instance[VoxelChunk.type].outer_pos = pos;
 
         // Link with neighbors
         for (const face of FaceUtils.getFaces()) {
@@ -43,6 +44,11 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
         target.setWorldPos(this, pos);
         return target;
     }
+
+    getVoxelInChunk(chunk: TChunk, index: ChunkIndex, target = new VoxelPointer<TChunk>()): VoxelPointer<TChunk> {
+        target.setPosInChunk(chunk, index);
+        return target;
+    }
 }
 
 export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeighbor>>> {
@@ -50,6 +56,7 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
 
     private readonly neighbors: (TNeighbor | undefined)[] = new Array(6);
     private readonly data: ArrayBuffer;
+    public outer_pos = vec3.create();
 
     constructor(private readonly bytes_per_voxel: number) {
         this.data = new ArrayBuffer(bytes_per_voxel * CHUNK_SIZE ** 3);
@@ -65,7 +72,7 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
         return this.neighbors[face];
     }
 
-    // Raw voxel management
+    // Voxel management
     getVoxelRaw(pos: ChunkIndex): ArrayBuffer {
         return this.data.slice(pos * this.bytes_per_voxel, this.bytes_per_voxel);
     }
@@ -79,15 +86,35 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         return this.chunk != null;
     }
 
-    getNeighbor(world: VoxelWorld<TChunk>, face: VoxelFace, jump_size: number) {
-        const { index, traversed_chunks } = ChunkIndex.addFace(this.inner_pos, face, jump_size);
-        this.inner_pos = index;
+    getNeighborDirect(face: VoxelFace, target: VoxelPointer<TChunk> = this): VoxelPointer<TChunk> {
+        const axis = FaceUtils.getAxis(face);
+        const sign = FaceUtils.getSign(face);
+        const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, axis, sign);
+
+        if (traversed_chunks > 0) {
+            if (this.chunk != null) {
+                target.chunk = this.chunk[VoxelChunk.type].getNeighbor(face);
+            }
+            target.outer_pos[axis] += sign;
+        }
+        target.inner_pos = index;
+        return target;
+    }
+
+    getNeighbor(world: VoxelWorld<TChunk>, face: VoxelFace, jump_size: number, target: VoxelPointer<TChunk> = this): VoxelPointer<TChunk> {
+        const axis = FaceUtils.getAxis(face);
+        const sign = FaceUtils.getSign(face);
+        const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, axis, sign * jump_size);
+
+        target.inner_pos = index;
+        target.outer_pos[axis] += sign * jump_size;
         for (let i = 0; i < traversed_chunks && this.chunk != null; i++) {
-            this.chunk = this.chunk[VoxelChunk.type].getNeighbor(face);
+            target.chunk = this.chunk[VoxelChunk.type].getNeighbor(face);
         }
-        if (this.chunk == null) {
-            this.attemptReattach(world);
+        if (target.chunk == null) {
+            target.attemptReattach(world);
         }
+        return target;
     }
 
     getWorldPos(world: VoxelWorld<TChunk>, target: vec3 = vec3.create()): vec3 {
@@ -103,6 +130,12 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.outer_pos[1] = pos[1] >> BITS_PER_CHUNK_COMP;
         this.outer_pos[2] = pos[2] >> BITS_PER_CHUNK_COMP;
         this.chunk = world.getChunk(this.outer_pos);
+    }
+
+    setPosInChunk(chunk: TChunk, index: ChunkIndex) {
+        vec3.copy(this.outer_pos, chunk[VoxelChunk.type].outer_pos);
+        this.inner_pos = index;
+        this.chunk = chunk;
     }
 
     clone() {

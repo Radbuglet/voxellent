@@ -22,18 +22,18 @@ export class ChunkMeshingQueue<TCtx> {
             this.flagChunk(neighbor);
     }
 
-    flagVoxelFace(chunk: DirtyChunk<TCtx>, voxel: ChunkIndex, face: VoxelFace) {
-        if (ChunkIndex.addFace(voxel, face).traversed_chunks > 1) {
+    flagVoxelFace(chunk: DirtyChunk<TCtx>, index: ChunkIndex, face: VoxelFace) {
+        if (ChunkIndex.addFace(index, face).traversed_chunks > 1) {
             this.flagChunkNeighbor(chunk, face);
         } else {
             this.flagChunk(chunk);
         }
     }
 
-    flagVoxelFaces(chunk: DirtyChunk<TCtx>, voxel: ChunkIndex) {
+    flagVoxelFaces(chunk: DirtyChunk<TCtx>, index: ChunkIndex) {
         let flagged_self = false;
         for (const axis of FaceUtils.getAxes()) {
-            const face = ChunkIndex.getEdgeFace(voxel, axis);
+            const face = ChunkIndex.getEdgeFace(index, axis);
             if (face != null) {
                 this.flagChunkNeighbor(chunk, face);
             } else if (!flagged_self) {

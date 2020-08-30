@@ -10,9 +10,10 @@ export enum VoxelFace {
     pz, nz
 }
 
+// TODO: Bitshift might be bad. (Also, a lot of this code is incorrect)
 export const FaceUtils = new (class {
     fromParts(axis: Axis, sign: Sign): VoxelFace {
-        return axis << 1 + (sign === 1 ? 0 : 1);
+        return axis * 2 + (sign === 1 ? 0 : 1);
     }
 
     getInverse(face: VoxelFace): VoxelFace {
@@ -27,7 +28,7 @@ export const FaceUtils = new (class {
     }
 
     getSign(face: VoxelFace) {
-        return 1 - (face ^ 1 << 1) as Sign;  // => (1 - 2 * x) where x is the sign of the face
+        return 1 - (2 * (face & 1)) as Sign;  // => (1 - 2 * x) where x is the sign of the face
     }
 
     *getFaces(): IterableIterator<VoxelFace> {

@@ -2,7 +2,7 @@ import {vec3} from "gl-matrix";
 import {P$} from "ts-providers";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VectorKey, VecUtils} from "../utils/vecUtils";
-import {BITS_PER_CHUNK_COMP, CHUNK_EDGE_SIZE, ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
+import {CHUNK_EDGE_SIZE, ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
 
 export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     public static readonly type = Symbol();
@@ -87,6 +87,11 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         return this.chunk != null;
     }
 
+    reattachIfDetached(world: VoxelWorld<TChunk>): boolean {
+        return this.chunk != null || this.attemptReattach(world);
+    }
+
+
     getWorldPos(world: VoxelWorld<TChunk>, target: vec3 = vec3.create()): vec3 {
         return ChunkIndex.addToVector(this.inner_pos,
             WorldSpaceUtils.chunkOuterGetWsRoot(this.outer_pos, target));
@@ -120,19 +125,9 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         return target;
     }
 
-    getNeighbor(world: VoxelWorld<TChunk>, face: VoxelFace, jump_size: number, target: VoxelPointer<TChunk> = this): VoxelPointer<TChunk> {
-        const axis = FaceUtils.getAxis(face);
-        const sign = FaceUtils.getSign(face);
-        const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, axis, sign * jump_size);
-
-        target.inner_pos = index;
-        target.outer_pos[axis] += sign * jump_size;
-        for (let i = 0; i < traversed_chunks && this.chunk != null; i++) {
-            target.chunk = this.chunk[VoxelChunk.type].getNeighbor(face);
-        }
-        if (target.chunk == null) {
-            target.attemptReattach(world);
-        }
+    getNeighbor(world: VoxelWorld<TChunk>, face: VoxelFace, target: VoxelPointer<TChunk> = this): VoxelPointer<TChunk> {
+        this.getNeighborDirect(face, target);
+        this.reattachIfDetached(world);
         return target;
     }
 

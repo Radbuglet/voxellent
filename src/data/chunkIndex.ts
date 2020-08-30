@@ -8,7 +8,11 @@ export const CHUNK_VOXEL_COUNT = CHUNK_EDGE_SIZE ** 3;
 export type ChunkIndex = number;
 export const ChunkIndex = new (class {
     // Vector-index interactions
-    fromVector(x: number, y: number, z: number) {
+    fromWorldVector(vec: vec3) {
+        return this.fromChunkVector(vec[0] & CHUNK_EDGE_SIZE, vec[1] & CHUNK_EDGE_SIZE, vec[2] & CHUNK_EDGE_SIZE);
+    }
+
+    fromChunkVector(x: number, y: number, z: number) {
         return x + (y << BITS_PER_CHUNK_COMP) + (z << 2 * BITS_PER_CHUNK_COMP);
     }
 
@@ -21,7 +25,7 @@ export const ChunkIndex = new (class {
         return target;
     }
 
-    // Vector based modification
+    // Axis modification
     add(index: ChunkIndex, axis: Axis, delta: number) {
         const axis_value = this.getComponent(index, axis) + delta;
         return {
@@ -81,7 +85,7 @@ export const WorldSpaceUtils = new (class {
     }
 
     wsGetChunkIndex(vec: vec3) {
-        return ChunkIndex.fromVector(
+        return ChunkIndex.fromChunkVector(
             vec[0] & CHUNK_EDGE_SIZE,
             vec[1] & CHUNK_EDGE_SIZE,
             vec[2] & CHUNK_EDGE_SIZE);

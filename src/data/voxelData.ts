@@ -4,6 +4,7 @@ import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VectorKey, VecUtils} from "../utils/vecUtils";
 import {CHUNK_EDGE_SIZE, ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
 
+// TODO: Figure out references and general safety; improve API
 export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     public static readonly type = Symbol();
     private readonly chunks = new Map<VectorKey, TChunk>();
@@ -92,7 +93,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     // Position management
-    getWorldPos(world: VoxelWorld<TChunk>, target: vec3 = vec3.create()): vec3 {
+    getWorldPos(target: vec3 = vec3.create()): vec3 {
         return ChunkIndex.addToVector(this.inner_pos,
             WorldSpaceUtils.chunkOuterGetWsRoot(this.outer_pos, target));
     }

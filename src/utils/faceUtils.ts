@@ -1,4 +1,5 @@
 import {Sign} from "./vecUtils";
+import {vec2, vec3} from "gl-matrix";
 
 export enum Axis {
     x, y, z
@@ -11,6 +12,19 @@ export enum VoxelFace {
 }
 
 export const FaceUtils = new (class {
+    private readonly ortho_axes: [Axis, Axis][] = [];
+
+    constructor() {
+        for (const primary of this.getAxes()) {
+            const ortho_tuple = [];
+            for (const axis of this.getAxes()) {
+                if (axis != primary)
+                    ortho_tuple.push(axis);
+            }
+            this.ortho_axes.push(ortho_tuple as [Axis, Axis]);
+        }
+    }
+
     fromParts(axis: Axis, sign: Sign): VoxelFace {
         return axis * 2 + (sign === 1 ? 0 : 1);
     }
@@ -40,5 +54,21 @@ export const FaceUtils = new (class {
         for (let i = 0; i < 3; i++) {
             yield i;
         }
+    }
+
+    insersectFaceOrtho(face_axis: Axis, face_depth: number, origin: vec3, end: vec3, target: vec3 = vec3.create()): vec3 | null {
+        const time = (face_depth - origin[face_axis]) / (end[face_axis] - origin[face_axis]);
+        return time < 0 || time > 1 ? null : vec3.lerp(target, origin, end, time);
+    }
+
+    getOrthoAxes(axis: Axis) {
+        return this.ortho_axes[axis];
+    }
+
+    orthoProject(axis: Axis, vec: vec3, target: vec2) {
+        const axes = this.getOrthoAxes(axis);
+        target[0] = vec[axes[0]];
+        target[1] = vec[axes[1]];
+        return target;
     }
 })();

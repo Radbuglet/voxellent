@@ -10,7 +10,6 @@ export enum VoxelFace {
     pz, nz
 }
 
-// TODO: Bitshift might be bad. (Also, a lot of this code is incorrect)
 export const FaceUtils = new (class {
     fromParts(axis: Axis, sign: Sign): VoxelFace {
         return axis * 2 + (sign === 1 ? 0 : 1);

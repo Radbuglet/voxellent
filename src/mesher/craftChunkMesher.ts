@@ -29,7 +29,7 @@ export function createCraftChunkMesh<TCtx, TChunk extends P$<typeof VoxelChunk, 
             if (own_mesh_face == null) continue;
 
             // Parse neighbor
-            pointer_target.getNeighborDirect(face, pointer_lookup);
+            pointer_target.getNeighborRaw(face, pointer_lookup);
             const neighbor_mesh = decodeVoxel(pointer_target);
 
             // Determine whether or not our face should exist

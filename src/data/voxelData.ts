@@ -81,17 +81,17 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
 export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     constructor(public outer_pos: vec3 = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk?: TChunk) {}
 
-    // Position management
-    attemptReattach(world: VoxelWorld<TChunk>): boolean {
+    // Chunk reference management
+    refreshChunk(world: VoxelWorld<TChunk>): boolean {
         this.chunk = world.getChunk(this.outer_pos);
         return this.chunk != null;
     }
 
-    reattachIfDetached(world: VoxelWorld<TChunk>): boolean {
-        return this.chunk != null || this.attemptReattach(world);
+    attemptReattach(world: VoxelWorld<TChunk>): boolean {
+        return this.chunk != null || this.refreshChunk(world);
     }
 
-
+    // Position management
     getWorldPos(world: VoxelWorld<TChunk>, target: vec3 = vec3.create()): vec3 {
         return ChunkIndex.addToVector(this.inner_pos,
             WorldSpaceUtils.chunkOuterGetWsRoot(this.outer_pos, target));
@@ -109,8 +109,8 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.chunk = chunk;
     }
 
-    // Neighbors
-    getNeighborDirect(face: VoxelFace, target: VoxelPointer<TChunk> = this): VoxelPointer<TChunk> {
+    // Neighbor querying
+    getNeighborRaw(face: VoxelFace, target: VoxelPointer<TChunk> = this): VoxelPointer<TChunk> {
         const axis = FaceUtils.getAxis(face);
         const sign = FaceUtils.getSign(face);
         const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, axis, sign);
@@ -125,9 +125,10 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         return target;
     }
 
+    // TODO: This should only attempt reattach at chunk crossings.
     getNeighbor(world: VoxelWorld<TChunk>, face: VoxelFace, target: VoxelPointer<TChunk> = this): VoxelPointer<TChunk> {
-        this.getNeighborDirect(face, target);
-        this.reattachIfDetached(world);
+        this.attemptReattach(world);
+        this.getNeighborRaw(face, target);
         return target;
     }
 

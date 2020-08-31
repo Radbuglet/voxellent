@@ -12,13 +12,11 @@ Voxel engine rewritten is a cleaner and more flexible revision of my old [voxel-
 - The utilities for loading in textures are gone as it is not the job of the library to handle WebGL boilerplate.
 - Utilities from the Lyptic fork of the previous engine have been ported to this engine, notably:
     - Voxel based raytracing
-    - Voxel based `RigidBodies`
+    - Voxel based `MovableBodies`
 
 Planned features:
 
 - Per-voxel-face lighting
-- Ray casting
-- Rigid bodies
 - Interactive chunk loading
 - A block registry
 - A customizable compressed voxel mesh buffer

@@ -65,7 +65,7 @@ export const FaceUtils = new (class {
         return this.ortho_axes[axis];
     }
 
-    orthoProject(axis: Axis, vec: vec3, target: vec2) {
+    orthoProject(axis: Axis, vec: vec3, target: vec2 = vec2.create()) {
         const axes = this.getOrthoAxes(axis);
         target[0] = vec[axes[0]];
         target[1] = vec[axes[1]];

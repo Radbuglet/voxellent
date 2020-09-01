@@ -98,8 +98,12 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     setWorldPos(world: VoxelWorld<TChunk>, pos: vec3) {
+        this.setWorldPosNoReattach(pos);
+        this.refreshChunk(world);
+    }
+
+    setWorldPosNoReattach(pos: vec3) {
         WorldSpaceUtils.wsGetChunkOuter(pos, this.outer_pos);
-        this.chunk = world.getChunk(this.outer_pos);
         this.inner_pos = WorldSpaceUtils.wsGetChunkIndex(pos);
     }
 
@@ -134,11 +138,11 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
 
     // Memory management
     clone() {
-        return new VoxelPointer<TChunk>(this.outer_pos, this.inner_pos, this.chunk);
+        return new VoxelPointer<TChunk>(vec3.clone(this.outer_pos), this.inner_pos, this.chunk);
     }
 
     copyTo(target: VoxelPointer<TChunk>) {
-        target.outer_pos = this.outer_pos;
+        vec3.copy(target.outer_pos, this.outer_pos);
         target.inner_pos = this.inner_pos;
         target.chunk = this.chunk;
     }

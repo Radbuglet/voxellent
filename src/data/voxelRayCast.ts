@@ -5,11 +5,10 @@ import {FaceUtils} from "../utils/faceUtils";
 import {VecUtils} from "../utils/vecUtils";
 
 export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
-    public readonly pointer: VoxelPointer<TChunk>;
-    public readonly last_position: vec3;
+    private readonly pointer: VoxelPointer<TChunk>;
+    private readonly last_position = vec3.create();
 
-    constructor(world: VoxelWorld<TChunk>, public readonly position: vec3) {
-        this.last_position = vec3.clone(this.position);
+    constructor(world: VoxelWorld<TChunk>, private position: vec3) {
         this.pointer = world.getVoxel(vec3.clone(position));
     }
 
@@ -51,5 +50,19 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         // Release work vectors
         VecUtils.vec3_pool.release(claimed_intersect_point);
         VecUtils.vec3_pool.release(claimed_pointer_ws);
+    }
+
+    getPosition(): vec3 {
+        return this.position;
+    }
+
+    setPosition(world: VoxelWorld<TChunk>, position: vec3) {
+        this.position = position;
+        this.pointer.setWorldPos(world, position);
+    }
+    
+    copyTo(other: VoxelRayCast<TChunk>) {
+        vec3.copy(other.position, this.position);
+        this.pointer.copyTo(other.pointer);
     }
 }

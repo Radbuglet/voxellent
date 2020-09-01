@@ -110,7 +110,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     // Neighbor querying
-    getNeighborRaw(face: VoxelFace, target: VoxelPointer<TChunk> = this): VoxelPointer<TChunk> {
+    getNeighborRaw(face: VoxelFace, target: VoxelPointer<TChunk> = this, reattach_using_world?: VoxelWorld<TChunk>): VoxelPointer<TChunk> {
         const axis = FaceUtils.getAxis(face);
         const sign = FaceUtils.getSign(face);
         const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, axis, sign);
@@ -118,6 +118,8 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         if (traversed_chunks > 0) {
             if (this.chunk != null) {
                 target.chunk = this.chunk[VoxelChunk.type].getNeighbor(face);
+            } else if (reattach_using_world != null) {
+                this.attemptReattach(reattach_using_world);
             }
             target.outer_pos[axis] += sign;
         }
@@ -125,10 +127,8 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         return target;
     }
 
-    // TODO: This should only attempt reattach at chunk crossings.
     getNeighbor(world: VoxelWorld<TChunk>, face: VoxelFace, target: VoxelPointer<TChunk> = this): VoxelPointer<TChunk> {
-        this.attemptReattach(world);
-        this.getNeighborRaw(face, target);
+        this.getNeighborRaw(face, target, world);
         return target;
     }
 

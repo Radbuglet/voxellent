@@ -16,10 +16,10 @@ Voxel engine rewritten is a cleaner and more flexible revision of my old [voxel-
 
 Planned features:
 
-- Per-voxel-face lighting
 - Interactive chunk loading
 - A block registry
 - A customizable compressed voxel mesh buffer
+- Per-voxel-face lighting
 
 ## Managing voxel world data
 

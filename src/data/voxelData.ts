@@ -55,7 +55,7 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
     public static readonly type = Symbol();
 
     private readonly neighbors: (TNeighbor | undefined)[] = new Array(6);
-    private readonly data: ArrayBuffer;
+    private readonly data: ArrayBuffer;  // TODO: Allow phantom chunks without `data`.
     public outer_pos = vec3.create();
 
     constructor(private readonly bytes_per_voxel: number) {

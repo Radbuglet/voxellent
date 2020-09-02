@@ -11,6 +11,8 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.pointer = world.getVoxel(vec3.clone(position));
     }
 
+    // TODO: Skip over empty chunks (if allowed by user)
+    // FIXME: This implementation is incorrect
     *step(world: VoxelWorld<TChunk>, delta_normalized: vec3): IterableIterator<vec3> {
         // Claim work vectors
         const claimed_last_pos = VecUtils.vec3_pool.obtain();

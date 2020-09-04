@@ -55,12 +55,10 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
     public static readonly type = Symbol();
 
     private readonly neighbors: (TNeighbor | undefined)[] = new Array(6);
-    private readonly data: ArrayBuffer;  // TODO: Allow phantom chunks without `data`.
+    private data?: ArrayBuffer;
     public outer_pos = vec3.create();
 
-    constructor(private readonly bytes_per_voxel: number) {
-        this.data = new ArrayBuffer(bytes_per_voxel * CHUNK_EDGE_SIZE ** 3);
-    }
+    constructor(private bytes_per_voxel: number) {}
 
     // Neighbor management
     linkToNeighbor(face: VoxelFace, self: TNeighbor, other: TNeighbor) {
@@ -73,8 +71,28 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
     }
 
     // Voxel management
-    getVoxelRaw(pos: ChunkIndex): ArrayBuffer {
-        return this.data.slice(pos * this.bytes_per_voxel, this.bytes_per_voxel);
+    allocateVoxelData(bytes_per_voxel?: number) {
+        if (bytes_per_voxel != null) this.bytes_per_voxel = bytes_per_voxel;
+        this.data = new ArrayBuffer(this.bytes_per_voxel * CHUNK_EDGE_SIZE ** 3);
+    }
+
+    hasVoxelData() {
+        return this.data != null;
+    }
+
+    removeVoxelData() {
+        this.data = undefined;
+    }
+
+    getVoxelRaw(pos: ChunkIndex): ArrayBuffer | null {
+        return this.data == null ? null : this.data.slice(pos * this.bytes_per_voxel, this.bytes_per_voxel);
+    }
+
+    getVoxelRawOrCreate(pos: ChunkIndex): ArrayBuffer {
+        if (this.data == null) {
+            this.allocateVoxelData();
+        }
+        return this.data!.slice(pos * this.bytes_per_voxel, this.bytes_per_voxel);
     }
 }
 

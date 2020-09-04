@@ -1,76 +1,81 @@
+import {vec3} from "gl-matrix";
+import {Axis, FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VoxelChunk, VoxelPointer, VoxelWorld} from "./voxelData";
 import {P$} from "ts-providers";
-import {vec3} from "gl-matrix";
-import {FaceUtils} from "../utils/faceUtils";
-import {VecUtils} from "../utils/vecUtils";
 
-export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
-    public pointer: VoxelPointer<TChunk>;
+export const VoxelRayCast = new (class {
+    public last_breached_face: VoxelFace = VoxelFace.px;
+    public last_distance_traveled: number = 0;
 
-    constructor(world: VoxelWorld<TChunk>, public position: vec3) {
-        this.pointer = world.getVoxel(vec3.clone(position));
-    }
+    // This algorithm was adapted from "A Fast Voxel Traversal Algorithm for Ray Tracing" by John Amanatides and Andrew Woo.
+    *iterFaceTraversals(position: vec3, direction: vec3) {
+        // >> Find the faces associated with breaching on a given axis
+        const face_x = FaceUtils.fromParts(Axis.x, direction[0] > 0 ? 1 : -1);
+        const face_y = FaceUtils.fromParts(Axis.y, direction[1] > 0 ? 1 : -1);
+        const face_z = FaceUtils.fromParts(Axis.z, direction[2] > 0 ? 1 : -1);
 
-    // TODO: Skip over empty chunks (if allowed by user)
-    // FIXME: This implementation is incorrect
-    *step(world: VoxelWorld<TChunk>, delta_normalized: vec3): IterableIterator<vec3> {
-        // Claim work vectors
-        const claimed_last_pos = VecUtils.vec3_pool.obtain();
-        const claimed_intersect_point = VecUtils.vec3_pool.obtain();
-        const claimed_pointer_ws = VecUtils.vec3_pool.obtain();
+        // >> This is the distance the ray will travel to go from one edge of that axis to the other.
+        // This is used to increment the dist_at_[x-z]_cross values so that they properly represent how far the vector
+        // will go to reach the next breach.
+        const cross_dist_step_x = Math.abs(1 / direction[0]);
+        const cross_dist_step_y = Math.abs(1 / direction[1]);
+        const cross_dist_step_z = Math.abs(1 / direction[2]);
 
-        // Store last position
-        vec3.copy(claimed_last_pos, this.position);
-        vec3.add(this.position, this.position, delta_normalized);
+        // >> This vector represents the distance at which the next voxel crossing occurs.
+        // TODO: Calculate
+        let dist_at_x_cross = 0;
+        let dist_at_y_cross = 0;
+        let dist_at_z_cross = 0;
 
-        // Step through voxels
-        for (const axis of FaceUtils.getAxes()) {
-            // Check if we crossed any voxel boundaries on the axis
-            const old_axis_voxel = Math.floor(claimed_last_pos[axis]);
-            const new_axis_voxel = Math.floor(this.position[axis]);
-            if (new_axis_voxel != old_axis_voxel) {
-                // Update the pointer
-                this.pointer.getNeighbor(world, FaceUtils.fromParts(axis, delta_normalized[axis] > 0 ? 1 : -1), this.pointer);  // (writes to the pointer)
+        // >> Trace the ray!
+        while (true) {
+            // >> The face we cross will be on the axis which requires the least amount of distance to get to.
+            // We will yield the crossed face and then move the dist_at_[x-z]_cross variable to represent the distance for
+            // the next cross.
 
-                // Get intersection point
-                const intersect_point = FaceUtils.insersectFaceOrtho(axis, delta_normalized[axis] > 0 ? new_axis_voxel : old_axis_voxel,
-                    claimed_last_pos, this.position, claimed_intersect_point);
-                if (intersect_point == null) continue;  // No intersection
+            // Is x the minimum?
+            if (dist_at_x_cross < dist_at_y_cross && dist_at_x_cross < dist_at_z_cross) {  // Y cannot be the minimum
+                // >> Update registers and yield
+                this.last_breached_face = face_x;
+                this.last_distance_traveled = dist_at_x_cross;
+                yield face_x;
 
-                // Ensure that intersection is within the voxel.
-                const pointer_ws = this.pointer.getWorldPos(claimed_pointer_ws);
-                const ortho_axes = FaceUtils.getOrthoAxes(axis);
-                const axis_a_rel = intersect_point[ortho_axes[0]] - pointer_ws[ortho_axes[0]];
-                const axis_b_rel = intersect_point[ortho_axes[1]] - pointer_ws[ortho_axes[1]];
-                if (axis_a_rel < 0 || axis_a_rel > 1 || axis_b_rel < 0 || axis_b_rel > 1) continue;
+                // >> Update next cross distance for axis
+                dist_at_x_cross += cross_dist_step_x;
+                continue;
+            }
 
-                // TODO: Expose relative coords?
-                yield intersect_point;
+            // Is y the minimum?
+            if (dist_at_y_cross < dist_at_z_cross) {
+                // >> Update registers and yield
+                this.last_breached_face = face_y;
+                this.last_distance_traveled = dist_at_y_cross;
+                yield face_y;
+
+                // >> Update next cross distance for axis
+                dist_at_y_cross += cross_dist_step_y;
+                continue;
+            }
+
+            // Z must be the minimum!
+            {
+                // >> Update registers and yield
+                this.last_breached_face = face_z;
+                this.last_distance_traveled = dist_at_z_cross;
+                yield face_z;
+
+                // >> Update next cross distance for axis
+                dist_at_z_cross += cross_dist_step_z;
             }
         }
-
-        // Release work vectors
-        VecUtils.vec3_pool.release(claimed_last_pos);
-        VecUtils.vec3_pool.release(claimed_intersect_point);
-        VecUtils.vec3_pool.release(claimed_pointer_ws);
     }
 
-    getPosition(): vec3 {
-        return this.position;
+    *iterCastVoxels<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(
+            world: VoxelWorld<TChunk>, pointer: VoxelPointer<TChunk>, position: vec3, origin: vec3) {
+        // TODO
     }
 
-    warpToPosition(world: VoxelWorld<TChunk>, position: vec3) {
-        vec3.copy(this.position, position);
-        this.pointer.setWorldPos(world, position);
+    getLastFaceIntersectPos(target_absolute: vec3 | null, target_relative: vec3 | null): boolean {
+        throw "";  // TODO
     }
-
-    warpToPointed(pointer: VoxelPointer<TChunk>, position: vec3) {
-        vec3.copy(this.position, position);
-        pointer.copyTo(this.pointer);
-    }
-    
-    copyTo(other: VoxelRayCast<TChunk>) {
-        vec3.copy(other.position, this.position);
-        this.pointer.copyTo(other.pointer);
-    }
-}
+})();

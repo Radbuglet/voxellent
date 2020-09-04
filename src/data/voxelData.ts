@@ -38,17 +38,6 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
     getChunk(pos: vec3) {
         return this.chunks.get(VecUtils.getVectorKey(pos));
     }
-
-    // Voxel lookups
-    getVoxel(pos: vec3, target = new VoxelPointer<TChunk>()): VoxelPointer<TChunk> {
-        target.setWorldPos(this, pos);
-        return target;
-    }
-
-    getVoxelInChunk(chunk: TChunk, index: ChunkIndex, target = new VoxelPointer<TChunk>()): VoxelPointer<TChunk> {
-        target.setPosInChunk(chunk, index);
-        return target;
-    }
 }
 
 export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeighbor>>> {
@@ -97,7 +86,20 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
 }
 
 export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
+    // Construction
     constructor(public outer_pos: vec3 = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk?: TChunk) {}
+
+    static fromPos<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(world: VoxelWorld<TChunk>, pos: vec3) {
+        const instance = new VoxelPointer<TChunk>();
+        instance.setWorldPos(world, pos);
+        return instance;
+    }
+
+    static fromChunkPos<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(chunk: TChunk, index: ChunkIndex) {
+        const instance = new VoxelPointer<TChunk>();
+        instance.setPosInChunk(chunk, index);
+        return instance;
+    }
 
     // Chunk reference management
     refreshChunk(world: VoxelWorld<TChunk>): boolean {

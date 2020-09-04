@@ -1,6 +1,6 @@
 import {vec3} from "gl-matrix";
 import {Axis} from "../utils/faceUtils";
-import {VoxelChunk} from "./voxelData";
+import {VoxelChunk} from "./data";
 import {P$} from "ts-providers";
 
 export class VoxelMovableBody<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {

@@ -1,16 +1,18 @@
 import {P$} from "ts-providers";
 import {vec3} from "gl-matrix";
 import {ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
-import {FaceUtils, VoxelFace} from "../utils/faceUtils";
+import {Axis, FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VoxelChunk, VoxelWorld} from "./data";
+import {Sign} from "../utils/vecUtils";
 
+// TODO: Make this API safer
 export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     // Construction
     constructor(public outer_pos: vec3 = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk?: TChunk) {}
 
     static fromPos<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(world: VoxelWorld<TChunk>, pos: vec3) {
         const instance = new VoxelPointer<TChunk>();
-        instance.setWorldPos(world, pos);
+        instance.setWorldPosRefreshed(world, pos);
         return instance;
     }
 
@@ -36,7 +38,56 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
             WorldSpaceUtils.chunkOuterGetWsRoot(this.outer_pos, target));
     }
 
-    setWorldPos(world: VoxelWorld<TChunk>, pos: vec3) {
+    // TODO: Use
+    setWorldPosRegional(world: VoxelWorld<TChunk>, pos: vec3) {
+        if (this.chunk == null) {
+            this.setWorldPosRefreshed(world, pos);
+            return;
+        }
+
+        // Store the old position of the chunk
+        const old_cx = this.outer_pos[0];
+        const old_cy = this.outer_pos[1];
+        const old_cz = this.outer_pos[2];
+
+        // Move the position state
+        this.setWorldPosNoReattach(pos);
+
+        // See if we traversed to a neighbor
+        let chunk_delta = this.outer_pos[0] - old_cx;
+        if (chunk_delta == 0) {
+            // Nothing to do on this axis.
+        } else if (Math.abs(chunk_delta) == 1) {
+            // Traverse to the already captured chunk's neighbor.
+            this.chunk = this.chunk![VoxelChunk.type].getNeighbor(FaceUtils.fromParts(Axis.x, chunk_delta as Sign));
+        } else {
+            // Nothing we can do here. Fallback to a refresh.
+            this.refreshChunk(world);
+            return;
+        }
+
+        chunk_delta = this.outer_pos[1] - old_cy;
+        if (chunk_delta == 0) {
+            // Nothing to do on this axis.
+        } else if (Math.abs(chunk_delta) == 1) {
+            this.chunk = this.chunk![VoxelChunk.type].getNeighbor(FaceUtils.fromParts(Axis.y, chunk_delta as Sign));
+        } else {
+            this.refreshChunk(world);
+            return;
+        }
+
+        chunk_delta = this.outer_pos[2] - old_cz;
+        if (chunk_delta == 0) {
+            // Nothing to do on this axis.
+        } else if (Math.abs(chunk_delta) == 1) {
+            this.chunk = this.chunk![VoxelChunk.type].getNeighbor(FaceUtils.fromParts(Axis.z, chunk_delta as Sign));
+        } else {
+            this.refreshChunk(world);
+            return;
+        }
+    }
+
+    setWorldPosRefreshed(world: VoxelWorld<TChunk>, pos: vec3) {
         this.setWorldPosNoReattach(pos);
         this.refreshChunk(world);
     }

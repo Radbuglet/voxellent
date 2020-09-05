@@ -8,7 +8,6 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
     public static readonly type = Symbol();
     private readonly chunks = new Map<VectorKey, TChunk>();
 
-    // Chunk management
     addChunk(pos: vec3, instance: TChunk) {
         console.assert(!this.chunks.has(VecUtils.getVectorKey(pos)) && VecUtils.isIntVec(pos));
         this.chunks.set(VecUtils.getVectorKey(pos), instance);

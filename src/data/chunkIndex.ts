@@ -26,7 +26,7 @@ export const ChunkIndex = new (class {
     }
 
     // Axis modification
-    add(index: ChunkIndex, axis: Axis, delta: number) {
+    add(index: ChunkIndex, axis: Axis, delta: number) {  // TODO: Ahh! Forced heap allocation!
         const axis_value = this.getComponent(index, axis) + delta;
         return {
             traversed_chunks: axis_value >> BITS_PER_CHUNK_COMP,

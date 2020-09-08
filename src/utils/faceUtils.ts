@@ -44,6 +44,7 @@ export const FaceUtils = new (class {
         return 1 - (2 * (face & 1)) as Sign;  // => (1 - 2 * x) where x is the sign of the face
     }
 
+    // TODO: Since generators are heap allocated, we should really just return pre-prepared readonly arrays.
     *getFaces(): IterableIterator<VoxelFace> {
         for (let i = 0; i < 6; i++) {
             yield i;

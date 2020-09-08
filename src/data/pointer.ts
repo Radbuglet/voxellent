@@ -5,7 +5,6 @@ import {Axis, FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VoxelChunk, VoxelWorld} from "./data";
 import {Sign} from "../utils/vecUtils";
 
-// TODO: Methods should be copy by default, not mutate by default.
 export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     // Construction
     constructor(public outer_pos: vec3 = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk_cache?: TChunk) {}
@@ -74,36 +73,28 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this._setWorldPosNoReattach(pos);
 
         // See if we traversed to a neighbor
-        let chunk_delta = this.outer_pos[0] - old_cx;
-        if (chunk_delta == 0) {
-            // Nothing to do on this axis.
-        } else if (Math.abs(chunk_delta) == 1) {
-            // Traverse to the already captured chunk's neighbor.
-            this.chunk_cache = this.chunk_cache![VoxelChunk.type].getNeighbor(FaceUtils.fromParts(Axis.x, chunk_delta as Sign));
-        } else {
-            // Nothing we can do here. Fallback to a refresh.
-            this.refreshChunk(world);
-            return;
-        }
+        for (const axis of FaceUtils.getAxes()) {
+            // Get chunk delta (done in this weird way to avoid a heap allocation)
+            let chunk_delta = this.outer_pos[axis];
+            if (axis === 0) {
+                chunk_delta -= old_cx;
+            } else if (axis === 1) {
+                chunk_delta -= old_cy;
+            } else {
+                chunk_delta -= old_cz;
+            }
 
-        chunk_delta = this.outer_pos[1] - old_cy;
-        if (chunk_delta == 0) {
-            // Nothing to do on this axis.
-        } else if (Math.abs(chunk_delta) == 1) {
-            this.chunk_cache = this.chunk_cache![VoxelChunk.type].getNeighbor(FaceUtils.fromParts(Axis.y, chunk_delta as Sign));
-        } else {
-            this.refreshChunk(world);
-            return;
-        }
-
-        chunk_delta = this.outer_pos[2] - old_cz;
-        if (chunk_delta == 0) {
-            // Nothing to do on this axis.
-        } else if (Math.abs(chunk_delta) == 1) {
-            this.chunk_cache = this.chunk_cache![VoxelChunk.type].getNeighbor(FaceUtils.fromParts(Axis.z, chunk_delta as Sign));
-        } else {
-            this.refreshChunk(world);
-            return;
+            // Traverse.
+            if (chunk_delta === 0) {
+                // Nothing to do on this axis.
+            } else if (chunk_delta === 1 || chunk_delta === -1) {
+                // Traverse to the already captured chunk's neighbor.
+                this.chunk_cache = this.chunk_cache![VoxelChunk.type].getNeighbor(FaceUtils.fromParts(axis, chunk_delta as Sign));
+            } else {
+                // Nothing we can do here. Fallback to a refresh.
+                this.refreshChunk(world);
+                return;
+            }
         }
     }
 
@@ -114,7 +105,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     // Neighbor querying
-    getNeighborRaw(face: VoxelFace, target: VoxelPointer<TChunk> = this, reattach_using_world?: VoxelWorld<TChunk>): VoxelPointer<TChunk> {
+    getNeighborRaw(face: VoxelFace, target: VoxelPointer<TChunk> = new VoxelPointer<TChunk>(), reattach_using_world?: VoxelWorld<TChunk>): VoxelPointer<TChunk> {
         const axis = FaceUtils.getAxis(face);
         const sign = FaceUtils.getSign(face);
         const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, axis, sign);
@@ -132,16 +123,16 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         return target;
     }
 
-    getNeighbor(world: VoxelWorld<TChunk>, face: VoxelFace, target: VoxelPointer<TChunk> = this): VoxelPointer<TChunk> {
+    getNeighbor(world: VoxelWorld<TChunk>, face: VoxelFace, target: VoxelPointer<TChunk> = new VoxelPointer<TChunk>()): VoxelPointer<TChunk> {
         return this.getNeighborRaw(face, target, world);
     }
 
     // Relative movement
-    moveByRaw(rel: vec3, target: VoxelPointer<TChunk> = this, reattach_using_world?: VoxelWorld<TChunk>) {
+    moveByRaw(rel: vec3, target: VoxelPointer<TChunk> = new VoxelPointer<TChunk>(), reattach_using_world?: VoxelWorld<TChunk>) {
         throw "Not implemented";  // TODO
     }
 
-    moveBy(world: VoxelWorld<TChunk>, rel: vec3, target: VoxelPointer<TChunk> = this) {
+    moveBy(world: VoxelWorld<TChunk>, rel: vec3, target: VoxelPointer<TChunk> = new VoxelPointer<TChunk>()) {
         this.moveByRaw(rel, target, world);
     }
 

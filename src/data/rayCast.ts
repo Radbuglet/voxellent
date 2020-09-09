@@ -45,13 +45,13 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         // Get initial distance to cross.
         this.dist_at_x_cross = this.direction[0] === 0 ? Infinity :  // If this component is zero, we will never cross
             // Otherwise, the distance is equal to the full length distance times the percent of the axis already traversed.
-            this.cross_dist_step_x * (this.direction[0] > 0 ? -1 : 1) * (Math.floor(this.origin[0]) - this.origin[0]);
+            this.cross_dist_step_x * -FaceUtils.signOf(this.direction[0]) * (Math.floor(this.origin[0]) - this.origin[0]);
 
         this.dist_at_y_cross = this.direction[1] === 0 ? Infinity :
-            this.cross_dist_step_y * (this.direction[1] > 0 ? -1 : 1) * (Math.floor(this.origin[1]) - this.origin[1]);
+            this.cross_dist_step_y * -FaceUtils.signOf(this.direction[1]) * (Math.floor(this.origin[1]) - this.origin[1]);
 
         this.dist_at_z_cross = this.direction[2] === 0 ? Infinity :
-            this.cross_dist_step_z * (this.direction[2] > 0 ? -1 : 1) * (Math.floor(this.origin[2]) - this.origin[2]);
+            this.cross_dist_step_z * -FaceUtils.signOf(this.direction[2]) * (Math.floor(this.origin[2]) - this.origin[2]);
     }
 
     private warpOnlyDirection(new_direction: vec3) {
@@ -59,9 +59,9 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.direction = new_direction;
 
         // Figure out the faces crossed on a breach of each axis.
-        this.face_x = FaceUtils.fromParts(Axis.x, new_direction[0] > 0 ? 1 : -1);
-        this.face_y = FaceUtils.fromParts(Axis.y, new_direction[1] > 0 ? 1 : -1);
-        this.face_z = FaceUtils.fromParts(Axis.z, new_direction[2] > 0 ? 1 : -1);
+        this.face_x = FaceUtils.fromParts(Axis.x, FaceUtils.signOf(new_direction[0]));
+        this.face_y = FaceUtils.fromParts(Axis.y, FaceUtils.signOf(new_direction[1]));
+        this.face_z = FaceUtils.fromParts(Axis.z, FaceUtils.signOf(new_direction[2]));
 
         // Figure out the distance needed to cross from one edge to the other.
         this.cross_dist_step_x = Math.abs(1 / new_direction[0]);
@@ -98,7 +98,7 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
             this.distance_traveled = this.dist_at_x_cross;
 
             // >> Update pointed voxel
-            this.pointer.getNeighbor(world, this.face_x, this.pointer);
+            this.pointer.getNeighborMut(this.face_x, world);
 
             // >> Update next cross distance for axis
             this.dist_at_x_cross += this.cross_dist_step_x;
@@ -112,7 +112,7 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
             this.distance_traveled = this.dist_at_y_cross;
 
             // >> Update pointed voxel
-            this.pointer.getNeighbor(world, this.face_y, this.pointer);
+            this.pointer.getNeighborMut(this.face_y, world);
 
             // >> Update next cross distance for axis
             this.dist_at_y_cross += this.cross_dist_step_y;
@@ -126,7 +126,7 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
             this.distance_traveled = this.dist_at_z_cross;
 
             // >> Update pointed voxel
-            this.pointer.getNeighbor(world, this.face_z, this.pointer);
+            this.pointer.getNeighborMut(this.face_z, world);
 
             // >> Update next cross distance for axis
             this.dist_at_z_cross += this.cross_dist_step_z;

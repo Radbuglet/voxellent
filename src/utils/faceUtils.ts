@@ -25,6 +25,10 @@ export const FaceUtils = new (class {
         }
     }
 
+    signOf(v: number): Sign {
+        return v > 0 ? 1 : -1;
+    }
+
     fromParts(axis: Axis, sign: Sign): VoxelFace {
         return axis * 2 + (sign === 1 ? 0 : 1);
     }

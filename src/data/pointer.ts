@@ -106,12 +106,11 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     // Neighbor querying
-    getNeighborMut(face: VoxelFace, world: VoxelWorld<TChunk> | null) {
+    getNeighborMut(face: VoxelFace, world: VoxelWorld<TChunk> | null, magnitude: number = 1) {
         const axis = FaceUtils.getAxis(face);
         const sign = FaceUtils.getSign(face);
-        const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, axis, sign);
+        const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, axis, sign * magnitude);
 
-        // TODO: The target's state is not updated properly.
         if (traversed_chunks > 0) {
             if (this.chunk_cache != null) {
                 this.chunk_cache = this.chunk_cache[VoxelChunk.type].getNeighbor(face);
@@ -124,17 +123,22 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         return this;
     }
 
-    getNeighborCopy(face: VoxelFace, world: VoxelWorld<TChunk> | null) {
-        return this.clone().getNeighborMut(face, world);
+    getNeighborCopy(face: VoxelFace, world: VoxelWorld<TChunk> | null, magnitude?: number) {
+        return this.clone().getNeighborMut(face, world, magnitude);
     }
 
     // Relative movement
-    moveByMut() {
-        throw "Not implemented";  // TODO
+    moveByMut(delta: vec3, world: VoxelWorld<TChunk> | null) {
+        for (const axis of FaceUtils.getAxes()) {
+            this.getNeighborMut(FaceUtils.fromParts(axis, FaceUtils.signOf(delta[axis])), null, Math.abs(delta[axis]));
+        }
+        if (world !== null) {
+            this.attemptReattach(world);
+        }
     }
 
-    moveByCopy() {
-        throw "Not implemented";
+    moveByCopy(delta: vec3, world: VoxelWorld<TChunk> | null) {
+        return this.clone().moveByMut(delta, world);
     }
 
     // Memory management

@@ -5,12 +5,11 @@ import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VoxelChunk, VoxelWorld} from "./data";
 import {Sign} from "../utils/vecUtils";
 
-// TODO: Make vectors immutable unless we take ownership. (Project wide)
 export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     // Construction
     constructor(public outer_pos: vec3 = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk_cache?: TChunk) {}
 
-    static fromPos<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(world: VoxelWorld<TChunk>, pos: vec3) {
+    static fromPos<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {
         const instance = new VoxelPointer<TChunk>();
         instance.setWorldPosRefreshed(world, pos);
         return instance;
@@ -44,22 +43,22 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
             WorldSpaceUtils.chunkOuterGetWsRoot(this.outer_pos, target));
     }
 
-    _setWorldPosNoReattach(pos: vec3) {
+    _setWorldPosNoReattach(pos: Readonly<vec3>) {
         WorldSpaceUtils.wsGetChunkOuter(pos, this.outer_pos);
         this.inner_pos = WorldSpaceUtils.wsGetChunkIndex(pos);
     }
 
-    setWorldPosRefreshed(world: VoxelWorld<TChunk>, pos: vec3) {
+    setWorldPosRefreshed(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {
         this._setWorldPosNoReattach(pos);
         this.refreshChunk(world);
     }
 
-    setWorldPosDetach(pos: vec3) {
+    setWorldPosDetach(pos: Readonly<vec3>) {
         this._setWorldPosNoReattach(pos);
         this.chunk_cache = undefined;
     }
 
-    setWorldPosRegional(world: VoxelWorld<TChunk>, pos: vec3) {
+    setWorldPosRegional(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {
         if (this.chunk_cache == null) {
             this.setWorldPosRefreshed(world, pos);
             return;
@@ -128,7 +127,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     // Relative movement
-    moveByMut(delta: vec3, world: VoxelWorld<TChunk> | null) {
+    moveByMut(delta: Readonly<vec3>, world: VoxelWorld<TChunk> | null) {
         for (const axis of FaceUtils.getAxes()) {
             this.getNeighborMut(FaceUtils.fromParts(axis, FaceUtils.signOf(delta[axis])), null, Math.abs(delta[axis]));
         }
@@ -137,7 +136,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         }
     }
 
-    moveByCopy(delta: vec3, world: VoxelWorld<TChunk> | null) {
+    moveByCopy(delta: Readonly<vec3>, world: VoxelWorld<TChunk> | null) {
         return this.clone().moveByMut(delta, world);
     }
 

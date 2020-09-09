@@ -69,7 +69,7 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.cross_dist_step_z = Math.abs(1 / new_direction[2]);
     }
 
-    warpPosition(world: VoxelWorld<any>, new_origin: vec3) {
+    warpPosition(world: VoxelWorld<TChunk>, new_origin: vec3) {
         this.pointer.setWorldPosRegional(world, new_origin);  // Pointer needs to be changed.
         this.warpPositionNoPtr(new_origin);  // To need to refresh direction.
     }
@@ -79,7 +79,7 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.warpPositionNoPtr(this.origin);  // The pointer is still valid, no need to refresh.
     }
 
-    warpPositionAndDirection(world: VoxelWorld<any>, new_origin: vec3, new_direction: vec3) {
+    warpPositionAndDirection(world: VoxelWorld<TChunk>, new_origin: vec3, new_direction: vec3) {
         this.pointer.setWorldPosRegional(world, new_origin);  // Pointer needs refresh
         this.warpOnlyDirection(new_direction);  // We first update the direction of the vector.
         this.warpPositionNoPtr(new_origin);  // Then we update the position state to both set the origin and apply it.

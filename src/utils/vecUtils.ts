@@ -16,7 +16,7 @@ export const VecUtils = new (class {
         return this.validateVec(vec, Number.isInteger);
     }
 
-    getVectorKey(vec: vec3): VectorKey {
+    getVectorKey(vec: Readonly<vec3>): VectorKey {
         return vec.toString();
     }
 })();

@@ -30,11 +30,11 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
         }
     }
 
-    removeChunk(pos: vec3) {
+    removeChunk(pos: Readonly<vec3>) {
         return this.chunks.delete(VecUtils.getVectorKey(pos));
     }
 
-    getChunk(pos: vec3) {
+    getChunk(pos: Readonly<vec3>) {
         return this.chunks.get(VecUtils.getVectorKey(pos));
     }
 }

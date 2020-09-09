@@ -1,10 +1,11 @@
 import {P$} from "ts-providers";
 import {vec3} from "gl-matrix";
 import {ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
-import {Axis, FaceUtils, VoxelFace} from "../utils/faceUtils";
+import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VoxelChunk, VoxelWorld} from "./data";
 import {Sign} from "../utils/vecUtils";
 
+// TODO: Make vectors immutable unless we take ownership. (Project wide)
 export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     // Construction
     constructor(public outer_pos: vec3 = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk_cache?: TChunk) {}
@@ -105,7 +106,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     // Neighbor querying
-    getNeighborRaw(face: VoxelFace, target: VoxelPointer<TChunk> = new VoxelPointer<TChunk>(), reattach_using_world?: VoxelWorld<TChunk>): VoxelPointer<TChunk> {
+    getNeighborMut(face: VoxelFace, world: VoxelWorld<TChunk> | null) {
         const axis = FaceUtils.getAxis(face);
         const sign = FaceUtils.getSign(face);
         const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, axis, sign);
@@ -113,27 +114,27 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         // TODO: The target's state is not updated properly.
         if (traversed_chunks > 0) {
             if (this.chunk_cache != null) {
-                target.chunk_cache = this.chunk_cache[VoxelChunk.type].getNeighbor(face);
-            } else if (reattach_using_world != null) {
-                this.attemptReattach(reattach_using_world);
+                this.chunk_cache = this.chunk_cache[VoxelChunk.type].getNeighbor(face);
+            } else if (world != null) {
+                this.attemptReattach(world);
             }
-            target.outer_pos[axis] += sign;
+            this.outer_pos[axis] += sign;
         }
-        target.inner_pos = index;
-        return target;
+        this.inner_pos = index;
+        return this;
     }
 
-    getNeighbor(world: VoxelWorld<TChunk>, face: VoxelFace, target: VoxelPointer<TChunk> = new VoxelPointer<TChunk>()): VoxelPointer<TChunk> {
-        return this.getNeighborRaw(face, target, world);
+    getNeighborCopy(face: VoxelFace, world: VoxelWorld<TChunk> | null) {
+        return this.clone().getNeighborMut(face, world);
     }
 
     // Relative movement
-    moveByRaw(rel: vec3, target: VoxelPointer<TChunk> = new VoxelPointer<TChunk>(), reattach_using_world?: VoxelWorld<TChunk>) {
+    moveByMut() {
         throw "Not implemented";  // TODO
     }
 
-    moveBy(world: VoxelWorld<TChunk>, rel: vec3, target: VoxelPointer<TChunk> = new VoxelPointer<TChunk>()) {
-        this.moveByRaw(rel, target, world);
+    moveByCopy() {
+        throw "Not implemented";
     }
 
     // Memory management

@@ -3,9 +3,10 @@ import {vec3} from "gl-matrix";
 import {ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VoxelChunk, VoxelWorld} from "./data";
-import {Sign} from "../utils/vecUtils";
 
 export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
+    private static readonly work_vec = vec3.create();
+
     // Construction
     constructor(public outer_pos: vec3 = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk_cache?: TChunk) {}
 
@@ -58,44 +59,18 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.chunk_cache = undefined;
     }
 
-    setWorldPosRegional(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {  // TODO: Use the relative movement algorithm
+    setWorldPosRegional(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {
         if (this.chunk_cache == null) {
             this.setWorldPosRefreshed(world, pos);
             return;
         }
 
-        // Store the old position of the chunk
-        const old_cx = this.outer_pos[0];
-        const old_cy = this.outer_pos[1];
-        const old_cz = this.outer_pos[2];
+        // Get world pos
+        this.getWorldPos(VoxelPointer.work_vec);
+        vec3.sub(VoxelPointer.work_vec, pos as vec3, VoxelPointer.work_vec);
 
-        // Move the position state
-        this._setWorldPosNoReattach(pos);
-
-        // See if we traversed to a neighbor
-        for (const axis of FaceUtils.getAxes()) {
-            // Get chunk delta (done in this weird way to avoid a heap allocation)
-            let chunk_delta = this.outer_pos[axis];
-            if (axis === 0) {
-                chunk_delta -= old_cx;
-            } else if (axis === 1) {
-                chunk_delta -= old_cy;
-            } else {
-                chunk_delta -= old_cz;
-            }
-
-            // Traverse.
-            if (chunk_delta === 0) {
-                // Nothing to do on this axis.
-            } else if (chunk_delta === 1 || chunk_delta === -1) {
-                // Traverse to the already captured chunk's neighbor.
-                this.chunk_cache = this.chunk_cache![VoxelChunk.type].getNeighbor(FaceUtils.fromParts(axis, chunk_delta as Sign));
-            } else {
-                // Nothing we can do here. Fallback to a refresh.
-                this.refreshChunk(world);
-                return;
-            }
-        }
+        // Move by the delta
+        this.moveByMut(VoxelPointer.work_vec, world);
     }
 
     setPosInChunk(chunk: TChunk, index: ChunkIndex) {

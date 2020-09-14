@@ -6,7 +6,6 @@ import {VoxelPointer} from "../pointer";
 
 // Adapted from the paper "A Fast Voxel Traversal Algorithm for Ray Tracing" by John Amanatides and Andrew Woo.
 // https://web.archive.org/web/20200215082332/http://www.cse.chalmers.se/edu/year/2010/course/TDA361/grid.pdf
-// TODO: Also make this API safer (encapsulate the traversal state)
 export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     // >> Status registers
     public breached_face: VoxelFace = VoxelFace.px;

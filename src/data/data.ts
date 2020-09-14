@@ -8,17 +8,20 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
     public static readonly type = Symbol();
     private readonly chunks = new Map<VectorKey, TChunk>();
 
-    addChunk(pos: vec3, instance: TChunk) {
-        console.assert(!this.chunks.has(VecUtils.getVectorKey(pos)) && VecUtils.isIntVec(pos));
+    addChunk(pos: Readonly<vec3>, instance: TChunk) {
+        console.assert(!this.chunks.has(VecUtils.getVectorKey(pos)) && VecUtils.isIntVec(pos as vec3));
+
+        // Add the root chunk
+        const chunk_pos = instance[VoxelChunk.type].outer_pos;
+        vec3.copy(chunk_pos, pos as vec3);
         this.chunks.set(VecUtils.getVectorKey(pos), instance);
-        instance[VoxelChunk.type].outer_pos = pos;
 
         // Link with neighbors
         for (const face of FaceUtils.getFaces()) {
             // Find neighbor position
             const axis = FaceUtils.getAxis(face);
             const sign = FaceUtils.getSign(face);
-            pos[axis] += sign;
+            chunk_pos[axis] += sign;
 
             // Find neighbor and link
             const neighbor = this.chunks.get(VecUtils.getVectorKey(pos));
@@ -26,7 +29,7 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
                 instance[VoxelChunk.type].linkToNeighbor(face, instance, neighbor);
 
             // Revert position vector to original state
-            pos[axis] -= sign;
+            chunk_pos[axis] -= sign;
         }
     }
 
@@ -42,9 +45,9 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
 export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeighbor>>> {
     public static readonly type = Symbol();
 
+    public readonly outer_pos = vec3.create();
     private readonly neighbors: (TNeighbor | undefined)[] = new Array(6);
     private data?: ArrayBuffer;
-    public outer_pos = vec3.create();
 
     constructor(private bytes_per_voxel: number) {}
 

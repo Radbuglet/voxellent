@@ -19,7 +19,6 @@ Planned features:
 - Interactive chunk loading
 - A block registry
 - A customizable compressed voxel mesh buffer
-- Per-voxel-face lighting
 
 ## Managing voxel world data
 
@@ -30,10 +29,6 @@ TODO
 TODO
 
 ## Rendering voxel worlds
-
-TODO
-
-## Lighting the world
 
 TODO
 

@@ -58,7 +58,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.chunk_cache = undefined;
     }
 
-    setWorldPosRegional(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {
+    setWorldPosRegional(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {  // TODO: Use the relative movement algorithm
         if (this.chunk_cache == null) {
             this.setWorldPosRefreshed(world, pos);
             return;
@@ -108,17 +108,28 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     getNeighborMut(face: VoxelFace, world: VoxelWorld<TChunk> | null, magnitude: number = 1) {
         const axis = FaceUtils.getAxis(face);
         const sign = FaceUtils.getSign(face);
-        const { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, axis, sign * magnitude);
+        let { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, axis, sign * magnitude);
 
+        // Update context-less position
+        this.inner_pos = index;
+        this.outer_pos[axis] += traversed_chunks * sign;
+
+        // Trace target chunk
         if (traversed_chunks > 0) {
-            if (this.chunk_cache != null) {
+            while (this.chunk_cache != null && traversed_chunks > 0) {
                 this.chunk_cache = this.chunk_cache[VoxelChunk.type].getNeighbor(face);
-            } else if (world != null) {
+
+                // If we managed to trace directly to the neighbor, no need to reattach even if the pointer is detached.
+                if (--traversed_chunks === 0) {
+                    return this;
+                }
+            }
+
+            if (this.chunk_cache != null && world != null) {
                 this.attemptReattach(world);
             }
-            this.outer_pos[axis] += sign;
         }
-        this.inner_pos = index;
+
         return this;
     }
 
@@ -128,9 +139,12 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
 
     // Relative movement
     moveByMut(delta: Readonly<vec3>, world: VoxelWorld<TChunk> | null) {
+        // Move the pointer to the target position using neighbor traversals.
         for (const axis of FaceUtils.getAxes()) {
             this.getNeighborMut(FaceUtils.fromParts(axis, FaceUtils.signOf(delta[axis])), null, Math.abs(delta[axis]));
         }
+
+        // If any of them loose the chunk, we can reattach if the world was provided.
         if (world !== null) {
             this.attemptReattach(world);
         }

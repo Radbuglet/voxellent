@@ -4,19 +4,29 @@ import {VoxelChunk, VoxelWorld} from "../data";
 import {P$} from "ts-providers";
 import {VoxelPointer} from "../pointer";
 
-// TODO: Finish implementing
 export class VoxelMovableBody<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     // >> Work objects
     private static a_aligned_ptr = new VoxelPointer<any>();
     private static b_aligned_ptr = new VoxelPointer<any>();
     private static trace_ptr = new VoxelPointer<any>();
 
-    // >> Construction  TODO: Safe variants
-    constructor(public position: vec3, private readonly pointer: VoxelPointer<TChunk> = new VoxelPointer<TChunk>()) {}
+    // >> Construction
+    constructor(public position: vec3 = vec3.create(), private readonly pointer: VoxelPointer<TChunk> = new VoxelPointer<TChunk>()) {}
+
+    static fromPosition<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(world: VoxelWorld<TChunk>, position: Readonly<vec3>) {
+        const body = new VoxelMovableBody<TChunk>();
+        body.warpTo(world, position);
+        return body;
+    }
 
     // >> Warping
-    warpTo(world: VoxelWorld<TChunk>, pos: vec3) {
-        throw "Not implemented";
+    warpTo(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {
+        vec3.copy(this.position, pos as vec3);
+        this.pointer.setWorldPosRegional(world, pos);  // TODO: Does it support floating points?
+    }
+
+    warpBy(world: VoxelWorld<TChunk>, delta: Readonly<vec3>) {
+        throw "Not implemented";  // TODO
     }
 
     // >> Movement
@@ -34,7 +44,7 @@ export class VoxelMovableBody<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TC
             a_aligned_ptr.getNeighborMut(FaceUtils.fromParts(axis, 1), world, dimensions[axis]);
         }
 
-        // Enumerate face rays
+        // Enumerate face rays (behold, the pyramid of doom)
         let max_distance = delta;
         for (let a_dist = 0; a_dist < dimensions[ortho_axes[0]]; a_dist++) {
             // Warp the b_aligned pointer back to the lowest value.
@@ -69,7 +79,9 @@ export class VoxelMovableBody<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TC
         return max_distance;
     }
 
-    moveBy(delta: vec3, dimensions: vec3) {
-        throw "Not implemented";
+    moveBy(world: VoxelWorld<TChunk>, dimensions: Readonly<vec3>, has_collided: (voxel: VoxelPointer<TChunk>) => boolean, delta: Readonly<vec3>) {
+        for (const axis of FaceUtils.getAxes()) {
+            this.moveOn(world, dimensions, has_collided, axis, delta[axis]);
+        }
     }
 }

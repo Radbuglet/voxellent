@@ -86,7 +86,7 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     // >> Ray-cast logic
-    step(world: VoxelWorld<TChunk>) {
+    step(world: VoxelWorld<TChunk>) {  // TODO: Skip over empty chunks
         // >> The face we cross will be on the axis which requires the least amount of distance to get to.
         // We will yield the crossed face and then move the dist_at_[x-z]_cross variable to represent the distance for
         // the next cross.

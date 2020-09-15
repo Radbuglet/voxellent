@@ -12,9 +12,22 @@ export enum VoxelFace {
 }
 
 export const FaceUtils = new (class {
+    private readonly axes: Axis[] = [];
+    private readonly faces: VoxelFace[] = [];
     private readonly ortho_axes: [Axis, Axis][] = [];
 
     constructor() {
+        // Generate axis list
+        for (let i = 0; i < 3; i++) {
+            this.axes.push(i);
+        }
+
+        // Generate face list
+        for (let i = 0; i < 6; i++) {
+            this.faces.push(i);
+        }
+
+        // Generate orthogonal axes
         for (const primary of this.getAxes()) {
             const ortho_tuple = [];
             for (const axis of this.getAxes()) {
@@ -48,20 +61,15 @@ export const FaceUtils = new (class {
         return 1 - (2 * (face & 1)) as Sign;  // => (1 - 2 * x) where x is the sign of the face
     }
 
-    // TODO: Since generators are heap allocated, we should really just return pre-prepared readonly arrays.
-    *getFaces(): IterableIterator<VoxelFace> {
-        for (let i = 0; i < 6; i++) {
-            yield i;
-        }
+    getFaces(): ReadonlyArray<VoxelFace> {
+        return this.faces;
     }
 
-    *getAxes(): IterableIterator<Axis> {
-        for (let i = 0; i < 3; i++) {
-            yield i;
-        }
+    getAxes(): ReadonlyArray<Axis> {
+        return this.axes;
     }
 
-    insersectFaceOrtho(face_axis: Axis, face_depth: number, origin: vec3, end: vec3, target: vec3 = vec3.create()): vec3 | null {
+    intersectFaceOrtho(face_axis: Axis, face_depth: number, origin: vec3, end: vec3, target: vec3 = vec3.create()): vec3 | null {
         const time = (face_depth - origin[face_axis]) / (end[face_axis] - origin[face_axis]);
         return time < 0 || time > 1 ? null : vec3.lerp(target, origin, end, time);
     }

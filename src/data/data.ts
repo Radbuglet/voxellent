@@ -26,7 +26,7 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
             // Find neighbor and link
             const neighbor = this.chunks.get(VecUtils.getVectorKey(pos));
             if (neighbor != null)
-                instance[VoxelChunk.type].linkToNeighbor(face, instance, neighbor);
+                instance[VoxelChunk.type]._linkToNeighbor(face, instance, neighbor);
 
             // Revert position vector to original state
             chunk_pos[axis] -= sign;
@@ -52,7 +52,7 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
     constructor(private bytes_per_voxel: number) {}
 
     // Neighbor management
-    linkToNeighbor(face: VoxelFace, self: TNeighbor, other: TNeighbor) {
+    _linkToNeighbor(face: VoxelFace, self: TNeighbor, other: TNeighbor) {
         this.neighbors[face] = other;
         other[VoxelChunk.type].neighbors[FaceUtils.getInverse(face)] = self;
     }

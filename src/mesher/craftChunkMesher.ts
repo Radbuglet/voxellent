@@ -15,7 +15,6 @@ export type CraftVoxelMesh<TCtx, TChunk extends P$<typeof VoxelChunk, VoxelChunk
 export function createCraftChunkMesh<TCtx, TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(
         ctx: TCtx, chunk: TChunk, decodeVoxel: (pointer: VoxelPointer<TChunk>) => CraftVoxelMesh<TCtx, TChunk> | null) {
     const pointer_target = new VoxelPointer<TChunk>();
-    const pointer_lookup = new VoxelPointer<TChunk>();
 
     for (const index of ChunkIndex.iterateAllIndices()) {
         // Parse voxel

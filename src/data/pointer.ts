@@ -4,6 +4,7 @@ import {ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VoxelChunk, VoxelWorld} from "./data";
 
+// FIXME: Make chunks store a reference to the world. Invalidate the chunk cache if the chunk is out of the world.
 export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     private static readonly work_vec = vec3.create();
 
@@ -19,18 +20,17 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     static fromChunkPos<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(chunk: TChunk, index: ChunkIndex) {
         const instance = new VoxelPointer<TChunk>();
         instance.setPosInChunk(chunk, index);
-        instance.chunk_cache = chunk;
         return instance;
     }
 
     // Chunk reference management
-    refreshChunk(world: VoxelWorld<TChunk>): boolean {
+    refreshChunkCache(world: VoxelWorld<TChunk>): boolean {
         this.chunk_cache = world.getChunk(this.outer_pos);
         return this.chunk_cache != null;
     }
 
     attemptReattach(world: VoxelWorld<TChunk>): boolean {
-        return this.chunk_cache != null || this.refreshChunk(world);
+        return this.chunk_cache != null || this.refreshChunkCache(world);
     }
 
     getChunk(world: VoxelWorld<TChunk>): TChunk | undefined {
@@ -51,7 +51,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
 
     setWorldPosRefreshed(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {
         this._setWorldPosNoReattach(pos);
-        this.refreshChunk(world);
+        this.refreshChunkCache(world);
     }
 
     setWorldPosDetach(pos: Readonly<vec3>) {
@@ -65,7 +65,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
             return;
         }
 
-        // Get world pos
+        // Find movement delta
         this.getWorldPos(VoxelPointer.work_vec);
         vec3.sub(VoxelPointer.work_vec, pos as vec3, VoxelPointer.work_vec);
 
@@ -100,7 +100,8 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
                 }
             }
 
-            if (this.chunk_cache != null && world != null) {
+            // If we have a world to reattach to, we should attempt to reattach if we lost the target chunk along the way.
+            if (world != null) {
                 this.attemptReattach(world);
             }
         }

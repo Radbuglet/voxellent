@@ -1,6 +1,6 @@
 import {vec3} from "gl-matrix";
 import {Axis, FaceUtils} from "../../utils/faceUtils";
-import {VoxelChunk, VoxelWorld} from "../data";
+import {VoxelChunk} from "../data";
 import {P$} from "ts-providers";
 import {VoxelPointer} from "../pointer";
 
@@ -13,24 +13,24 @@ export class VoxelMovableBody<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TC
     // >> Construction
     constructor(public position: vec3 = vec3.create(), private readonly pointer: VoxelPointer<TChunk> = new VoxelPointer<TChunk>()) {}
 
-    static fromPosition<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(world: VoxelWorld<TChunk>, position: Readonly<vec3>) {
+    static fromPosition<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(position: Readonly<vec3>) {
         const body = new VoxelMovableBody<TChunk>();
-        body.warpTo(world, position);
+        body.warpTo(position);
         return body;
     }
 
     // >> Warping
-    warpTo(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {
+    warpTo(pos: Readonly<vec3>) {
         vec3.copy(this.position, pos as vec3);
-        this.pointer.setWorldPosRegional(world, pos);  // TODO: Does it support floating points?
+        this.pointer.setWorldPosRegional(pos);
     }
 
-    warpBy(world: VoxelWorld<TChunk>, delta: Readonly<vec3>) {
+    warpBy(delta: Readonly<vec3>) {
         throw "Not implemented";  // TODO
     }
 
     // >> Movement
-    moveOn(world: VoxelWorld<TChunk>, dimensions: Readonly<vec3>, has_collided: (voxel: VoxelPointer<TChunk>) => boolean, axis: Axis, delta: number): number {
+    moveOn(dimensions: Readonly<vec3>, has_collided: (voxel: VoxelPointer<TChunk>) => boolean, axis: Axis, delta: number): number {
         // If there is no movement, don't do anything.
         if (delta == 0) return 0;
 
@@ -41,7 +41,7 @@ export class VoxelMovableBody<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TC
         // Find root vector
         this.pointer.copyTo(a_aligned_ptr);
         if (delta > 0) {  // If the delta is positive, we're operating on the opposite face.
-            a_aligned_ptr.getNeighborMut(FaceUtils.fromParts(axis, 1), world, dimensions[axis]);
+            a_aligned_ptr.getNeighborMut(FaceUtils.fromParts(axis, 1), dimensions[axis]);
         }
 
         // Enumerate face rays (behold, the pyramid of doom)
@@ -64,24 +64,24 @@ export class VoxelMovableBody<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TC
                     }
 
                     // Move the trace pointer along.
-                    trace_ptr.getNeighborMut(FaceUtils.fromParts(axis, 1), world);
+                    trace_ptr.getNeighborMut(FaceUtils.fromParts(axis, 1));
                 }
 
                 // Move the b pointer along
-                b_aligned_ptr.getNeighborMut(FaceUtils.fromParts(ortho_axes[1], 1), world);
+                b_aligned_ptr.getNeighborMut(FaceUtils.fromParts(ortho_axes[1], 1));
             }
 
             // Move the a pointer along
-            a_aligned_ptr.getNeighborMut(FaceUtils.fromParts(ortho_axes[0], 1), world);
+            a_aligned_ptr.getNeighborMut(FaceUtils.fromParts(ortho_axes[0], 1));
         }
 
         // Return the minimum distance that was traveled.
         return max_distance;
     }
 
-    moveBy(world: VoxelWorld<TChunk>, dimensions: Readonly<vec3>, has_collided: (voxel: VoxelPointer<TChunk>) => boolean, delta: Readonly<vec3>) {
+    moveBy(dimensions: Readonly<vec3>, has_collided: (voxel: VoxelPointer<TChunk>) => boolean, delta: Readonly<vec3>) {
         for (const axis of FaceUtils.getAxes()) {
-            this.moveOn(world, dimensions, has_collided, axis, delta[axis]);
+            this.moveOn(dimensions, has_collided, axis, delta[axis]);
         }
     }
 }

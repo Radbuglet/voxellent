@@ -16,6 +16,9 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
         vec3.copy(chunk_pos, pos as vec3);
         this.chunks.set(VecUtils.getVectorKey(pos), instance);
 
+        // Flag chunk
+        instance[VoxelChunk.type].in_world = true;
+
         // Link with neighbors
         for (const face of FaceUtils.getFaces()) {
             // Find neighbor position
@@ -41,6 +44,10 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
         // Unlink it!
         removed_chunk[VoxelChunk.type]._unlinkNeighbors();
         this.chunks.delete(VecUtils.getVectorKey(pos));
+
+        // Mark chunk as no longer in a world.
+        removed_chunk[VoxelChunk.type].in_world = true;
+
         return true;
     }
 
@@ -52,7 +59,8 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
 export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeighbor>>> {
     public static readonly type = Symbol();
 
-    public readonly outer_pos = vec3.create();
+    public in_world = false;
+    public readonly outer_pos: vec3 = vec3.create();
     private readonly neighbors: (TNeighbor | undefined)[] = new Array(6);
     private data?: ArrayBuffer;
 

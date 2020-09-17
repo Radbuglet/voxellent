@@ -4,7 +4,6 @@ import {ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VoxelChunk, VoxelWorld} from "./data";
 
-// FIXME: Make chunks store a reference to the world. Invalidate the chunk cache if the chunk is out of the world.
 export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     private static readonly work_vec = vec3.create();
 
@@ -13,13 +12,14 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
 
     static fromPos<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(pos: Readonly<vec3>) {
         const instance = new VoxelPointer<TChunk>();
-        instance.setWorldPosDetach(pos);
+        instance.setWorldPos(pos);
         return instance;
     }
 
     static fromPosAttached<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {
         const instance = new VoxelPointer<TChunk>();
-        instance.setWorldPosRefreshed(world, pos);
+        instance.setWorldPos(pos);
+        instance.forceRefreshChunkCache(world);  // We know that the chunk cache won't be valid.
         return instance;
     }
 
@@ -30,18 +30,28 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     // Chunk reference management
-    refreshChunkCache(world: VoxelWorld<TChunk>): boolean {
+    hasChunkCache() {
+        return this.chunk_cache != null && this.chunk_cache[VoxelChunk.type].in_world;
+    }
+
+    forceRefreshChunkCache(world: VoxelWorld<TChunk>): boolean {
         this.chunk_cache = world.getChunk(this.outer_pos);
         return this.chunk_cache != null;
     }
 
-    attemptReattach(world: VoxelWorld<TChunk>): boolean {
-        return this.chunk_cache != null || this.refreshChunkCache(world);
+    refreshChunkCache(world: VoxelWorld<TChunk>): boolean {
+        return this.hasChunkCache() || this.forceRefreshChunkCache(world);
     }
 
     getChunk(world: VoxelWorld<TChunk>): TChunk | undefined {
-        this.attemptReattach(world);
+        this.refreshChunkCache(world);
         return this.chunk_cache;
+    }
+
+    private ensureValidChunkCache() {
+        if (this.chunk_cache != null && !this.chunk_cache[VoxelChunk.type].in_world) {
+            this.chunk_cache = undefined;
+        }
     }
 
     // Position management
@@ -55,28 +65,18 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.inner_pos = WorldSpaceUtils.wsGetChunkIndex(pos);
     }
 
-    setWorldPosRefreshed(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {
-        this._setWorldPosNoReattach(pos);
-        this.refreshChunkCache(world);
-    }
-
-    setWorldPosDetach(pos: Readonly<vec3>) {
+    setWorldPos(pos: Readonly<vec3>) {
         this._setWorldPosNoReattach(pos);
         this.chunk_cache = undefined;
     }
 
-    setWorldPosRegional(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {
-        if (this.chunk_cache == null) {
-            this.setWorldPosRefreshed(world, pos);
-            return;
-        }
-
+    setWorldPosRegional(pos: Readonly<vec3>) {
         // Find movement delta
         this.getWorldPos(VoxelPointer.work_vec);
         vec3.sub(VoxelPointer.work_vec, pos as vec3, VoxelPointer.work_vec);
 
         // Move by the delta
-        this.moveByMut(VoxelPointer.work_vec, world);
+        this.moveByMut(VoxelPointer.work_vec);
     }
 
     setPosInChunk(chunk: TChunk, index: ChunkIndex) {
@@ -86,7 +86,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     // Neighbor querying
-    getNeighborMut(face: VoxelFace, world: VoxelWorld<TChunk> | null, magnitude: number = 1) {
+    getNeighborMut(face: VoxelFace, magnitude: number = 1) {
         const axis = FaceUtils.getAxis(face);
         const sign = FaceUtils.getSign(face);
         let { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, axis, sign * magnitude);
@@ -95,45 +95,31 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.inner_pos = index;
         this.outer_pos[axis] += traversed_chunks * sign;
 
-        // Trace target chunk
+        // Update chunk cache
         if (traversed_chunks > 0) {
+            this.ensureValidChunkCache();
             while (this.chunk_cache != null && traversed_chunks > 0) {
                 this.chunk_cache = this.chunk_cache[VoxelChunk.type].getNeighbor(face);
-
-                // If we managed to trace directly to the neighbor, no need to reattach even if the pointer is detached.
-                if (--traversed_chunks === 0) {
-                    return this;
-                }
-            }
-
-            // If we have a world to reattach to, we should attempt to reattach if we lost the target chunk along the way.
-            if (world != null) {
-                this.attemptReattach(world);
             }
         }
 
         return this;
     }
 
-    getNeighborCopy(face: VoxelFace, world: VoxelWorld<TChunk> | null, magnitude?: number) {
-        return this.clone().getNeighborMut(face, world, magnitude);
+    getNeighborCopy(face: VoxelFace, magnitude?: number) {
+        return this.clone().getNeighborMut(face, magnitude);
     }
 
     // Relative movement
-    moveByMut(delta: Readonly<vec3>, world: VoxelWorld<TChunk> | null) {
+    moveByMut(delta: Readonly<vec3>) {
         // Move the pointer to the target position using neighbor traversals.
         for (const axis of FaceUtils.getAxes()) {
-            this.getNeighborMut(FaceUtils.fromParts(axis, FaceUtils.signOf(delta[axis])), null, Math.abs(delta[axis]));
-        }
-
-        // If any of them loose the chunk, we can reattach if the world was provided.
-        if (world !== null) {
-            this.attemptReattach(world);
+            this.getNeighborMut(FaceUtils.fromParts(axis, FaceUtils.signOf(delta[axis])), Math.abs(delta[axis]));
         }
     }
 
-    moveByCopy(delta: Readonly<vec3>, world: VoxelWorld<TChunk> | null) {
-        return this.clone().moveByMut(delta, world);
+    moveByCopy(delta: Readonly<vec3>) {
+        return this.clone().moveByMut(delta);
     }
 
     // Memory management

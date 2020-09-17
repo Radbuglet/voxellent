@@ -1,12 +1,11 @@
 import {vec3} from "gl-matrix";
 import {Axis, FaceUtils, VoxelFace} from "../../utils/faceUtils";
-import {VoxelChunk, VoxelWorld} from "../data";
+import {VoxelChunk} from "../data";
 import {P$} from "ts-providers";
 import {VoxelPointer} from "../pointer";
 
 // Adapted from the paper "A Fast Voxel Traversal Algorithm for Ray Tracing" by John Amanatides and Andrew Woo.
 // https://web.archive.org/web/20200215082332/http://www.cse.chalmers.se/edu/year/2010/course/TDA361/grid.pdf
-// TODO: Evaluate whether or not reattachment is needed (see also MovableBody)
 export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     // >> Status registers
     public breached_face: VoxelFace = VoxelFace.px;
@@ -34,8 +33,8 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     private dist_at_z_cross!: number;
 
     // >> Construction  TODO: Raw counterpart
-    constructor(world: VoxelWorld<TChunk>, origin: vec3, direction: vec3, public readonly pointer: VoxelPointer<TChunk> = new VoxelPointer<TChunk>()) {
-        this.warpPositionAndDirection(world, origin, direction);
+    constructor(origin: vec3, direction: vec3, public readonly pointer: VoxelPointer<TChunk> = new VoxelPointer<TChunk>()) {
+        this.warpPositionAndDirection(origin, direction);
     }
 
     // >> Warp logic
@@ -69,8 +68,8 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.cross_dist_step_z = Math.abs(1 / new_direction[2]);
     }
 
-    warpPosition(world: VoxelWorld<TChunk>, new_origin: vec3) {
-        this.pointer.setWorldPosRegional(world, new_origin);  // Pointer needs to be changed.
+    warpPosition(new_origin: vec3) {
+        this.pointer.setWorldPosRegional(new_origin);  // Pointer needs to be changed.
         this.warpPositionNoPtr(new_origin);  // To need to refresh direction.
     }
 
@@ -79,14 +78,14 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.warpPositionNoPtr(this.origin);  // The pointer is still valid, no need to refresh.
     }
 
-    warpPositionAndDirection(world: VoxelWorld<TChunk>, new_origin: vec3, new_direction: vec3) {
-        this.pointer.setWorldPosRegional(world, new_origin);  // Pointer needs refresh
+    warpPositionAndDirection(new_origin: vec3, new_direction: vec3) {
+        this.pointer.setWorldPosRegional(new_origin);  // Pointer needs refresh
         this.warpOnlyDirection(new_direction);  // We first update the direction of the vector.
         this.warpPositionNoPtr(new_origin);  // Then we update the position state to both set the origin and apply it.
     }
 
     // >> Ray-cast logic
-    step(world: VoxelWorld<TChunk>) {  // TODO: Skip over empty chunks
+    step() {  // TODO: Skip over empty chunks
         // >> The face we cross will be on the axis which requires the least amount of distance to get to.
         // We will yield the crossed face and then move the dist_at_[x-z]_cross variable to represent the distance for
         // the next cross.
@@ -98,7 +97,7 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
             this.distance_traveled = this.dist_at_x_cross;
 
             // >> Update pointed voxel
-            this.pointer.getNeighborMut(this.face_x, world);
+            this.pointer.getNeighborMut(this.face_x);
 
             // >> Update next cross distance for axis
             this.dist_at_x_cross += this.cross_dist_step_x;
@@ -112,7 +111,7 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
             this.distance_traveled = this.dist_at_y_cross;
 
             // >> Update pointed voxel
-            this.pointer.getNeighborMut(this.face_y, world);
+            this.pointer.getNeighborMut(this.face_y);
 
             // >> Update next cross distance for axis
             this.dist_at_y_cross += this.cross_dist_step_y;
@@ -126,7 +125,7 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
             this.distance_traveled = this.dist_at_z_cross;
 
             // >> Update pointed voxel
-            this.pointer.getNeighborMut(this.face_z, world);
+            this.pointer.getNeighborMut(this.face_z);
 
             // >> Update next cross distance for axis
             this.dist_at_z_cross += this.cross_dist_step_z;

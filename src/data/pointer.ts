@@ -8,7 +8,11 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     private static readonly work_vec = vec3.create();
 
     // Construction
-    constructor(public outer_pos: vec3 = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk_cache?: TChunk) {}
+    private constructor(public outer_pos = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk_cache?: TChunk) {}
+
+    static empty<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>() {
+        return new VoxelPointer<TChunk>();
+    }
 
     static fromPos<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(pos: Readonly<vec3>) {
         const instance = new VoxelPointer<TChunk>();

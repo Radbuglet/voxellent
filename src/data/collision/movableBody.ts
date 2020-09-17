@@ -6,12 +6,13 @@ import {VoxelPointer} from "../pointer";
 
 export class VoxelMovableBody<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     // >> Work objects
-    private static a_aligned_ptr = new VoxelPointer<any>();
-    private static b_aligned_ptr = new VoxelPointer<any>();
-    private static trace_ptr = new VoxelPointer<any>();
+    private static a_aligned_ptr = VoxelPointer.empty<any>();
+    private static b_aligned_ptr = VoxelPointer.empty<any>();
+    private static trace_ptr = VoxelPointer.empty<any>();
 
     // >> Construction
-    constructor(public position: vec3 = vec3.create(), private readonly pointer: VoxelPointer<TChunk> = new VoxelPointer<TChunk>()) {}
+    // TODO: Remove raw constructor
+    constructor(public position: vec3 = vec3.create(), private readonly pointer: VoxelPointer<TChunk> = VoxelPointer.empty()) {}
 
     static fromPosition<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(position: Readonly<vec3>) {
         const body = new VoxelMovableBody<TChunk>();

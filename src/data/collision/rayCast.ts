@@ -8,11 +8,12 @@ import {VoxelPointer} from "../pointer";
 // https://web.archive.org/web/20200215082332/http://www.cse.chalmers.se/edu/year/2010/course/TDA361/grid.pdf
 export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     // >> Status registers
-    public breached_face: VoxelFace = VoxelFace.px;
+    public breached_face = VoxelFace.px;
     public distance_traveled: number = 0;
 
     // >> Traversal state
     // Represents the ray in world-space. This is used to convert distances back into positions.
+    public readonly pointer = VoxelPointer.empty<TChunk>();
     public origin!: vec3;
     public direction!: vec3;
 
@@ -32,8 +33,8 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     private dist_at_y_cross!: number;
     private dist_at_z_cross!: number;
 
-    // >> Construction  TODO: Raw counterpart
-    constructor(origin: vec3, direction: vec3, public readonly pointer: VoxelPointer<TChunk> = new VoxelPointer<TChunk>()) {
+    // >> Construction
+    constructor(origin: vec3, direction: vec3) {
         this.warpPositionAndDirection(origin, direction);
     }
 

@@ -34,7 +34,14 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
     }
 
     removeChunk(pos: Readonly<vec3>) {
-        return this.chunks.delete(VecUtils.getVectorKey(pos));
+        // Find the chunk to be removed.
+        const removed_chunk = this.chunks.get(VecUtils.getVectorKey(pos));
+        if (removed_chunk == null) return false;
+
+        // Unlink it!
+        removed_chunk[VoxelChunk.type]._unlinkNeighbors();
+        this.chunks.delete(VecUtils.getVectorKey(pos));
+        return true;
     }
 
     getChunk(pos: Readonly<vec3>) {
@@ -55,6 +62,16 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
     _linkToNeighbor(face: VoxelFace, self: TNeighbor, other: TNeighbor) {
         this.neighbors[face] = other;
         other[VoxelChunk.type].neighbors[FaceUtils.getInverse(face)] = self;
+    }
+
+    _unlinkNeighbors() {
+        for (const face of FaceUtils.getFaces()) {
+            const neighbor = this.neighbors[face];
+            if (neighbor != null) {
+                neighbor[VoxelChunk.type].neighbors[FaceUtils.getInverse(face)] = undefined;
+                this.neighbors[face] = undefined;  // This ensures that references to dead chunks won't keep other dead chunks alive.
+            }
+        }
     }
 
     getNeighbor(face: VoxelFace) {

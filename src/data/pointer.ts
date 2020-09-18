@@ -38,6 +38,15 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         return this.chunk_cache != null && this.chunk_cache[VoxelChunk.type].in_world;
     }
 
+    getChunk(world: VoxelWorld<TChunk>): TChunk | undefined {
+        this.refreshChunkCache(world);
+        return this.chunk_cache;
+    }
+
+    clearChunkCache() {
+        this.chunk_cache = undefined;
+    }
+
     forceRefreshChunkCache(world: VoxelWorld<TChunk>): boolean {
         this.chunk_cache = world.getChunk(this.outer_pos);
         return this.chunk_cache != null;
@@ -45,11 +54,6 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
 
     refreshChunkCache(world: VoxelWorld<TChunk>): boolean {
         return this.hasChunkCache() || this.forceRefreshChunkCache(world);
-    }
-
-    getChunk(world: VoxelWorld<TChunk>): TChunk | undefined {
-        this.refreshChunkCache(world);
-        return this.chunk_cache;
     }
 
     private ensureValidChunkCache() {

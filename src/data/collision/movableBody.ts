@@ -10,14 +10,13 @@ export class VoxelMovableBody<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TC
     private static b_aligned_ptr = VoxelPointer.empty<any>();
     private static trace_ptr = VoxelPointer.empty<any>();
 
-    // >> Construction
-    // TODO: Remove raw constructor
-    constructor(public position: vec3 = vec3.create(), private readonly pointer: VoxelPointer<TChunk> = VoxelPointer.empty()) {}
+    // >> Properties
+    public readonly position = vec3.create();
+    private readonly pointer = VoxelPointer.empty<TChunk>();
 
-    static fromPosition<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(position: Readonly<vec3>) {
-        const body = new VoxelMovableBody<TChunk>();
-        body.warpTo(position);
-        return body;
+    // >> Construction
+    constructor(position: Readonly<vec3>) {
+        this.warpTo(position);
     }
 
     // >> Warping
@@ -27,7 +26,8 @@ export class VoxelMovableBody<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TC
     }
 
     warpBy(delta: Readonly<vec3>) {
-        throw "Not implemented";  // TODO
+        vec3.add(this.position, this.position, delta as vec3);
+        this.pointer.moveByMut(delta);
     }
 
     // >> Movement

@@ -35,7 +35,7 @@ export function createCraftChunkMesh<TCtx, TChunk extends P$<typeof VoxelChunk, 
             // Determine whether or not our face should exist
             if (neighbor_mesh != null) {
                 const neighbor_occ_face = neighbor_mesh[FaceUtils.getInverse(face)];
-                if (neighbor_occ_face != null && RectUtils.contains(neighbor_occ_face.rect, own_mesh_face.rect)) {
+                if (neighbor_occ_face != null && RectUtils.containsRect(neighbor_occ_face.rect, own_mesh_face.rect)) {
                     continue;  // We can't be visible making this a redundant face.
                 }
             }

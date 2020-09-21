@@ -87,6 +87,11 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.moveByMut(VoxelPointer.work_vec);
     }
 
+    setPosRelativeTo(pointer: VoxelPointer<TChunk>, delta: Readonly<vec3>) {
+        pointer.copyTo(this);
+        this.moveByMut(delta);
+    }
+
     setPosInChunk(chunk: TChunk, index: ChunkIndex) {
         vec3.copy(this.outer_pos, chunk[VoxelChunk.type].outer_pos);
         this.inner_pos = index;
@@ -97,7 +102,8 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     getNeighborMut(face: VoxelFace, magnitude: number = 1) {
         const axis = FaceUtils.getAxis(face);
         const sign = FaceUtils.getSign(face);
-        let { index, traversed_chunks } = ChunkIndex.add(this.inner_pos, axis, sign * magnitude);
+        const index = ChunkIndex.add(this.inner_pos, axis, sign * magnitude);
+        let traversed_chunks = ChunkIndex.register_traversed_chunks;
 
         // Update context-less position
         this.inner_pos = index;

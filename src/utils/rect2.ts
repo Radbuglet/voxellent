@@ -1,11 +1,12 @@
 import {vec2} from "gl-matrix";
 
-export type Rect2 = {
-    readonly x: number;
-    readonly y: number;
-    readonly w: number;
-    readonly h: number;
-}
+export type UlRect2 = {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+};
+export type Rect2 = Readonly<UlRect2>;
 
 export const RectUtils = new (class {
     containsRect(a: Rect2, b: Rect2): boolean {
@@ -19,17 +20,13 @@ export const RectUtils = new (class {
             point[1] >= rect.y && point[1] <= rect.y + rect.h;
     }
 
-    isValidPointIndex(rect: Rect2, index: number) {
-        return index < this.areaOf(rect);
-    }
-
-    getPointByIndex(rect: Rect2, index: number, target: vec2 = vec2.create()) {
-        target[0] = index & rect.w;
-        target[1] = index & ~rect.w;
-        return target;
-    }
-
     areaOf(rect: Rect2) {
         return rect.w * rect.h;
+    }
+
+    posAtIndex(rect: Rect2, index: number, target: vec2 = vec2.create()) {
+        target[0] = index & rect.w + rect.x;
+        target[1] = index & ~rect.w + rect.y;
+        return target;
     }
 })();

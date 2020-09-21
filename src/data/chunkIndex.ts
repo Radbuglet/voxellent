@@ -7,6 +7,8 @@ export const CHUNK_VOXEL_COUNT = CHUNK_EDGE_SIZE ** 3;
 
 export type ChunkIndex = number;
 export const ChunkIndex = new (class {
+    public register_traversed_chunks = 0;
+
     // Vector-index interactions
     fromWorldVector(vec: Readonly<vec3>) {
         return this.fromChunkVector(vec[0] & CHUNK_EDGE_SIZE, vec[1] & CHUNK_EDGE_SIZE, vec[2] & CHUNK_EDGE_SIZE);
@@ -26,13 +28,11 @@ export const ChunkIndex = new (class {
     }
 
     // Axis modification
-    add(index: ChunkIndex, axis: Axis, delta: number) {  // TODO: Ahh! Forced heap allocation!
+    add(index: ChunkIndex, axis: Axis, delta: number) {
         const axis_value = this.getComponent(index, axis) + delta;
-        return {
-            traversed_chunks: axis_value >> BITS_PER_CHUNK_COMP,
-            index: index - index & (CHUNK_EDGE_SIZE << BITS_PER_CHUNK_COMP * axis_value)  // Removes previous component value
-                + axis_value & CHUNK_EDGE_SIZE  // Adds the new wrapped component value
-        };
+        this.register_traversed_chunks = axis_value >> BITS_PER_CHUNK_COMP;
+        return index - index & (CHUNK_EDGE_SIZE << BITS_PER_CHUNK_COMP * axis_value)  // Removes previous component value
+            + axis_value & CHUNK_EDGE_SIZE;  // Adds the wrapped component value
     }
 
     addFace(index: ChunkIndex, face: VoxelFace, delta: number = 1) {

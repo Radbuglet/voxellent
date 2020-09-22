@@ -23,7 +23,11 @@ export class ChunkMeshingQueue<TCtx> {
     }
 
     flagVoxelFace(chunk: DirtyChunk<TCtx>, index: ChunkIndex, face: VoxelFace) {
-        if (ChunkIndex.addFace(index, face).traversed_chunks > 1) {
+        // Ignore the position result (we only care about the chunk traversal count)
+        ChunkIndex.addFace(index, face);
+
+        // If we traversed any chunks to get to that voxel, flag them as dirty.
+        if (ChunkIndex.register_traversed_chunks > 1) {
             this.flagChunkNeighbor(chunk, face);
         } else {
             this.flagChunk(chunk);

@@ -1,5 +1,6 @@
 import {vec2} from "gl-matrix";
 
+// This "gl-matrix"-like design is done to support third-party rect classes as most other implementations expose these properties.
 export type UlRect2 = {
     x: number;
     y: number;
@@ -8,7 +9,18 @@ export type UlRect2 = {
 };
 export type Rect2 = Readonly<UlRect2>;
 
-export const RectUtils = new (class {
+export const Rect2 = new (class {
+    create(x: number = 0, y: number = 0, w: number = 0, h: number = 0): UlRect2 {
+        return { x, y, w, h };
+    }
+
+    copy(target: UlRect2, from: Rect2) {
+        target.x = from.x;
+        target.y = from.y;
+        target.w = from.w;
+        target.h = from.h;
+    }
+
     containsRect(a: Rect2, b: Rect2): boolean {
         return a.x <= b.x && a.y <= b.y && // Top left
             b.x + b.w <= a.x + a.w &&  // Horizontal contain

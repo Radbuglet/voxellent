@@ -2,7 +2,7 @@ import {VoxelChunk} from "../data/data";
 import {P$} from "ts-providers";
 import {ChunkIndex} from "../data/chunkIndex";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
-import {Rect2, RectUtils} from "../utils/rect2";
+import {Rect2} from "../utils/rect2";
 import {VoxelPointer} from "../data/pointer";
 
 export type CraftVoxelMesh<TCtx, TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> = {
@@ -34,7 +34,7 @@ export function createCraftChunkMesh<TCtx, TChunk extends P$<typeof VoxelChunk, 
             // Determine whether or not our face should exist
             if (neighbor_mesh != null) {
                 const neighbor_occ_face = neighbor_mesh[FaceUtils.getInverse(face)];
-                if (neighbor_occ_face != null && RectUtils.containsRect(neighbor_occ_face.rect, own_mesh_face.rect)) {
+                if (neighbor_occ_face != null && Rect2.containsRect(neighbor_occ_face.rect, own_mesh_face.rect)) {
                     continue;  // We can't be visible making this a redundant face.
                 }
             }

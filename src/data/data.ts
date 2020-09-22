@@ -3,6 +3,7 @@ import {P$} from "ts-providers";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VectorKey, VecUtils} from "../utils/vecUtils";
 import {CHUNK_EDGE_SIZE, ChunkIndex} from "./chunkIndex";
+import {BufferUtils, PrimitiveByteCount} from "../utils/bufferUtils";
 
 export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     public static readonly type = Symbol();
@@ -59,12 +60,19 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
 export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeighbor>>> {
     public static readonly type = Symbol();
 
+    // Chunk position properties
     public in_world = false;
     public readonly outer_pos: vec3 = vec3.create();
     private readonly neighbors: (TNeighbor | undefined)[] = new Array(6);
-    private data?: ArrayBuffer;
 
-    constructor(private bytes_per_voxel: number) {}
+    // Chunk data properties
+    private data?: DataView;
+    private bytes_per_voxel!: number;
+
+    // Constructors
+    constructor(private material_id_size: PrimitiveByteCount, private data_id_size: PrimitiveByteCount) {
+        this.updateBytesPerVoxel();
+    }
 
     // Neighbor management
     _linkToNeighbor(face: VoxelFace, self: TNeighbor, other: TNeighbor) {
@@ -86,10 +94,31 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
         return this.neighbors[face];
     }
 
-    // Voxel management
-    allocateVoxelData(bytes_per_voxel?: number) {
-        if (bytes_per_voxel != null) this.bytes_per_voxel = bytes_per_voxel;
-        this.data = new ArrayBuffer(this.bytes_per_voxel * CHUNK_EDGE_SIZE ** 3);
+    // Voxel buffer management
+    private updateBytesPerVoxel() {
+        this.bytes_per_voxel = this.material_id_size + this.data_id_size;
+    }
+
+    allocateVoxelData(material_id_size?: PrimitiveByteCount, data_id_size?: PrimitiveByteCount) {
+        // Update buffer config
+        if (material_id_size != null) this.material_id_size = material_id_size;
+        if (data_id_size != null) this.data_id_size = data_id_size;
+        this.updateBytesPerVoxel();
+
+        // Reallocate the buffer
+        this.data = new DataView(new ArrayBuffer(this.bytes_per_voxel * CHUNK_EDGE_SIZE ** 3));
+    }
+
+    ensureDataAllocation() {
+        if (!this.hasVoxelData()) {
+            this.allocateVoxelData();
+        }
+    }
+
+    ensureDataAllocationConfig(material_id_size?: PrimitiveByteCount, data_id_size?: PrimitiveByteCount) {
+        if (!this.hasVoxelData() || material_id_size !== this.material_id_size || data_id_size !== this.data_id_size) {
+            this.allocateVoxelData(material_id_size, data_id_size);
+        }
     }
 
     hasVoxelData() {
@@ -100,14 +129,28 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
         this.data = undefined;
     }
 
-    getVoxelRaw(pos: ChunkIndex): ArrayBuffer | null {
-        return this.data == null ? null : this.data.slice(pos * this.bytes_per_voxel, this.bytes_per_voxel);
+    // Voxel management
+    getVoxelMaterial(pos: ChunkIndex): number | null {
+        return this.hasVoxelData() ? BufferUtils.getUintDynamic(this.data!, this.material_id_size, pos * this.bytes_per_voxel) : null;
     }
 
-    getVoxelRawOrCreate(pos: ChunkIndex): ArrayBuffer {
-        if (this.data == null) {
-            this.allocateVoxelData();
+    getVoxelData(pos: ChunkIndex) {
+        return this.hasVoxelData() ? BufferUtils.getUintDynamic(this.data!, this.data_id_size, pos * this.bytes_per_voxel + this.material_id_size) : null;
+    }
+
+    setVoxelMaterial(pos: ChunkIndex, value: number): boolean {
+        if (this.hasVoxelData()) {
+            BufferUtils.setUintDynamic(this.data!, this.material_id_size, pos, value);
+            return true;
         }
-        return this.data!.slice(pos * this.bytes_per_voxel, this.bytes_per_voxel);
+        return false;
+    }
+
+    setVoxelData(pos: ChunkIndex, value: number) {
+        if (this.hasVoxelData()) {
+            BufferUtils.setUintDynamic(this.data!, this.data_id_size, pos * this.bytes_per_voxel + this.material_id_size, value);
+            return true;
+        }
+        return false;
     }
 }

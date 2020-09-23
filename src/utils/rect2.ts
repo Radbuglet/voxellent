@@ -27,7 +27,7 @@ export const Rect2 = new (class {
             b.y + b.h <= a.y + a.h;  // Vertical contain
     }
 
-    containsPoint(rect: Rect2, point: vec2) {
+    containsPoint(rect: Rect2, point: Readonly<vec2>) {
         return point[0] >= rect.x && point[0] <= rect.x + rect.w &&
             point[1] >= rect.y && point[1] <= rect.y + rect.h;
     }
@@ -40,6 +40,11 @@ export const Rect2 = new (class {
         target[0] = index & rect.w + rect.x;
         target[1] = index & ~rect.w + rect.y;
         return target;
+    }
+
+    indexAtPos(rect: Rect2, pos: Readonly<vec2>) {
+        return (pos[0] - rect.x)  // Lowest level component
+            + (pos[1] - rect.y) * rect.w;  // Highest level component
     }
 
     getHorizontalEnd(rect: Rect2) {

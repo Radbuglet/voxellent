@@ -25,55 +25,89 @@ export class RectIterator {
         throw "Not implemented";  // TODO
     }
 
-    private exitTheExclusionZone(exclude_zone: RectIterator, target: vec2 = vec2.create()) {
+    // TODO: Check for off-by-one errors
+    private exitTheExclusionZone(exclude_zone: RectIterator, target: vec2 = vec2.create()): boolean {
+        const our_x_end = Rect2.getHorizontalEnd(this.rect);
+        const exclzone_x_end = Rect2.getHorizontalEnd(exclude_zone.rect);
+
         // Can skip past the zone and stay on the same line?
-        if (todo) {
+        const dist_until_own_end_niv = our_x_end - target[0];
+        const dist_until_exclzone_end = Math.min(
+            exclude_zone.max_index - exclude_zone.index,  // Assuming we are the last line
+            exclzone_x_end - target[0]  // Assuming we are not the last line
+        );
+
+        if (dist_until_exclzone_end <= dist_until_own_end_niv) {
             // Skip to the end of the region.
-            // TODO
-            return;
+            this.index += dist_until_exclzone_end;
+
+            // Are we still in the region?
+            if (this.hasInvalidIndex()) return false;
+
+            // Recalculate target and return success
+            this.getPoint(this.index, target);
+            return true;
         }
 
         // Does the line only cover the right half of the line?
-        if (todo) {
+        if (target[0] < exclude_zone.rect.x) {
             // Skip to the beginning of the next line.
-            // TODO
-            return;
+            this.index += dist_until_own_end_niv;
+
+            // Are we still in the region?
+            if (this.hasInvalidIndex()) return false;
+
+            // Recalculate target and return success
+            this.getPoint(this.index, target);
+            return true;
         }
 
         // Since we know that the zone covers the entire line, skip to the last point of the exclusion zone.
-        // TODO
+        exclude_zone.getPoint(exclude_zone.max_index, target);
 
-        // Can we put ourselves back in our region?
-        if (todo) {
-            // Go to the next closest point to the last point of the exclusion zone.
-            // TODO
-            return;
+        // Is this point to the left of the x_end?
+        if (target[0] <= our_x_end) {
+            // Skip to either the beginning of the line or the equivalent point
+            target[0] = Math.max(this.rect.x, target[0]);
+            this.index = Rect2.indexAtPos(this.rect, target);
+
+            // Our target pos and index are aligned. All we have to do is check for index validity.
+            return !this.hasInvalidIndex();
         }
 
-        // Otherwise, we couldn't skip over the exclude region to a point in our region. :(
-        this.index = this.max_index;
-        return;
+        // Our point is to the right of the x_end. Move to the beginning of the next line.
+        target[0] = this.rect.x;
+        target[1]++;
+        this.index = Rect2.indexAtPos(this.rect, target);
+
+        // Check validity
+        if (this.hasInvalidIndex()) {
+            // We couldn't skip over the exclude region to a point in our region. Return failure.
+            this.index = this.max_index;
+            return false;
+        } else {
+            // Recalculate target and return success
+            this.getPoint(this.index, target);
+            return true;
+        }
     }
 
     getNext(exclude_zone?: RectIterator, target: vec2 = vec2.create()): vec2 | null {
         // Short-circuit if we're done loading.
         if (!this.hasInvalidIndex()) return null;
 
-        // Get position of this index
+        // Get position of this index.
         this.getPoint(this.index, target);
 
-        // Check if we're in the exclusion zone
-        if (exclude_zone != null && exclude_zone.isInsideSpan(target)) {
-            // Try to escape it.
-            this.exitTheExclusionZone(exclude_zone, target);
-
-            // Ensure that our index is still valid.
-            if (this.hasInvalidIndex()) {
-                return null;
-            }
+        // Ensure that we're not in the exclusion zone.
+        if (
+            exclude_zone != null && exclude_zone.isInsideSpan(target) &&  // Are we in the exclusion zone?
+            !this.exitTheExclusionZone(exclude_zone, target)  // Has our attempt to exit it failed?
+        ) {
+            return null;  // We failed to reenter the region. There are no more points to return.
         }
 
-        // Move to the next index
+        // Move to the next index.
         this.index++;
 
         // Return the next target point.

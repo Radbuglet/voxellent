@@ -9,6 +9,7 @@ export type UlRect2 = {
 };
 export type Rect2 = Readonly<UlRect2>;
 
+// TODO: Clean up, validate.
 export const Rect2 = new (class {
     create(x: number = 0, y: number = 0, w: number = 0, h: number = 0): UlRect2 {
         return { x, y, w, h };
@@ -42,9 +43,26 @@ export const Rect2 = new (class {
         return target;
     }
 
-    indexAtPos(rect: Rect2, pos: Readonly<vec2>) {
+    indexAtPosUnchecked(rect: Rect2, pos: Readonly<vec2>) {
         return (pos[0] - rect.x)  // Lowest level component
             + (pos[1] - rect.y) * rect.w;  // Highest level component
+    }
+
+    indexAtPosChecked(rect: Rect2, pos: Readonly<vec2>, max_index: number): null | number {
+        // Calculate the horizontal component of the index. Ensure that it won't overflow into the vertical component.
+        const horizontal_component = pos[0] - rect.x;
+        if (horizontal_component > rect.w) {
+            // We have horizontally escaped the rect. Short-circuit before the index calculations fail.
+            return null;
+        }
+
+        // Calculate the full index.
+        const index = horizontal_component // Lowest level component
+            + (pos[1] - rect.y) * rect.w;  // Highest level component
+
+        // Return the index after validating it.
+        return index >= max_index ? null  // We have either vertically escaped the rect or our horizontal position on the last line passes the max index.
+            : index;  // Our index is valid!
     }
 
     getHorizontalEnd(rect: Rect2) {

@@ -22,10 +22,10 @@ export class RectIterator {
     }
 
     private isInsideSpan(point: vec2): boolean {
-        throw "Not implemented";  // TODO
+        return Rect2.indexAtPosChecked(this.rect, point, this.max_index) !== null;
     }
 
-    // TODO: Check for off-by-one errors
+    // TODO: Check for off-by-one errors (also check Rect2); clean up logic
     private exitTheExclusionZone(exclude_zone: RectIterator, target: vec2 = vec2.create()): boolean {
         const our_x_end = Rect2.getHorizontalEnd(this.rect);
         const exclzone_x_end = Rect2.getHorizontalEnd(exclude_zone.rect);
@@ -69,7 +69,7 @@ export class RectIterator {
         if (target[0] <= our_x_end) {
             // Skip to either the beginning of the line or the equivalent point
             target[0] = Math.max(this.rect.x, target[0]);
-            this.index = Rect2.indexAtPos(this.rect, target);
+            this.index = Rect2.indexAtPosUnchecked(this.rect, target);
 
             // Our target pos and index are aligned. All we have to do is check for index validity.
             return !this.hasInvalidIndex();
@@ -78,7 +78,7 @@ export class RectIterator {
         // Our point is to the right of the x_end. Move to the beginning of the next line.
         target[0] = this.rect.x;
         target[1]++;
-        this.index = Rect2.indexAtPos(this.rect, target);
+        this.index = Rect2.indexAtPosUnchecked(this.rect, target);
 
         // Check validity
         if (this.hasInvalidIndex()) {

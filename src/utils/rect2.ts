@@ -41,4 +41,12 @@ export const Rect2 = new (class {
         target[1] = index & ~rect.w + rect.y;
         return target;
     }
+
+    getHorizontalEnd(rect: Rect2) {
+        return rect.x + rect.w;
+    }
+
+    getVerticalEnd(rect: Rect2) {
+        return rect.y + rect.h;
+    }
 })();

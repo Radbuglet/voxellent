@@ -18,24 +18,17 @@ export class RectIterator {
     }
 
     private getPoint(index: number, target: vec2 = vec2.create()): vec2 {
-        return Rect2.posAtIndex(this.rect, index, target);
+        return Rect2.getPosAtIndex(this.rect, index, target);
     }
 
     private isInsideSpan(point: vec2): boolean {
-        return Rect2.indexAtPosChecked(this.rect, point, this.max_index) !== null;
+        return Rect2.getIndexAtPosChecked(this.rect, point, this.max_index) !== null;
     }
 
-    // TODO: Check for off-by-one errors (also check Rect2); clean up logic
     private exitTheExclusionZone(exclude_zone: RectIterator, target: vec2 = vec2.create()): boolean {
-        const our_x_end = Rect2.getHorizontalEnd(this.rect);
-        const exclzone_x_end = Rect2.getHorizontalEnd(exclude_zone.rect);
-
         // Can skip past the zone and stay on the same line?
-        const dist_until_own_end_niv = our_x_end - target[0];
-        const dist_until_exclzone_end = Math.min(
-            exclude_zone.max_index - exclude_zone.index,  // Assuming we are the last line
-            exclzone_x_end - target[0]  // Assuming we are not the last line
-        );
+        const dist_until_own_end_niv = Rect2.getIndicesUntilLineEndNoMax(this.rect, this.index);
+        const dist_until_exclzone_end = Rect2.getIndicesUntilLineEnd(exclude_zone.rect, target, exclude_zone.max_index);
 
         if (dist_until_exclzone_end <= dist_until_own_end_niv) {
             // Skip to the end of the region.
@@ -62,14 +55,16 @@ export class RectIterator {
             return true;
         }
 
-        // Since we know that the zone covers the entire line, skip to the last point of the exclusion zone.
+        // Since we know that the zone covers the entire line, skip to **one index past** the last point of the exclusion zone.
         exclude_zone.getPoint(exclude_zone.max_index, target);
 
-        // Is this point to the left of the x_end?
-        if (target[0] <= our_x_end) {
+        // Is this point to the left of the x end (x end being the horizontal value that will never be reached with iteration)?
+        if (target[0] <= Rect2.getHorizontalEnd(this.rect)) {
             // Skip to either the beginning of the line or the equivalent point
             target[0] = Math.max(this.rect.x, target[0]);
-            this.index = Rect2.indexAtPosUnchecked(this.rect, target);
+
+            // Update the index
+            this.index = Rect2.getIndexAtPosUnchecked(this.rect, target);
 
             // Our target pos and index are aligned. All we have to do is check for index validity.
             return !this.hasInvalidIndex();
@@ -78,7 +73,7 @@ export class RectIterator {
         // Our point is to the right of the x_end. Move to the beginning of the next line.
         target[0] = this.rect.x;
         target[1]++;
-        this.index = Rect2.indexAtPosUnchecked(this.rect, target);
+        this.index = Rect2.getIndexAtPosUnchecked(this.rect, target);
 
         // Check validity
         if (this.hasInvalidIndex()) {

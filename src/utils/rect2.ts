@@ -9,7 +9,6 @@ export type UlRect2 = {
 };
 export type Rect2 = Readonly<UlRect2>;
 
-// TODO: Clean up, validate.
 export const Rect2 = new (class {
     create(x: number = 0, y: number = 0, w: number = 0, h: number = 0): UlRect2 {
         return { x, y, w, h };
@@ -37,39 +36,62 @@ export const Rect2 = new (class {
         return rect.w * rect.h;
     }
 
-    posAtIndex(rect: Rect2, index: number, target: vec2 = vec2.create()) {
-        target[0] = index & rect.w + rect.x;
-        target[1] = index & ~rect.w + rect.y;
-        return target;
-    }
-
-    indexAtPosUnchecked(rect: Rect2, pos: Readonly<vec2>) {
-        return (pos[0] - rect.x)  // Lowest level component
-            + (pos[1] - rect.y) * rect.w;  // Highest level component
-    }
-
-    indexAtPosChecked(rect: Rect2, pos: Readonly<vec2>, max_index: number): null | number {
-        // Calculate the horizontal component of the index. Ensure that it won't overflow into the vertical component.
-        const horizontal_component = pos[0] - rect.x;
-        if (horizontal_component > rect.w) {
-            // We have horizontally escaped the rect. Short-circuit before the index calculations fail.
-            return null;
-        }
-
-        // Calculate the full index.
-        const index = horizontal_component // Lowest level component
-            + (pos[1] - rect.y) * rect.w;  // Highest level component
-
-        // Return the index after validating it.
-        return index >= max_index ? null  // We have either vertically escaped the rect or our horizontal position on the last line passes the max index.
-            : index;  // Our index is valid!
-    }
-
     getHorizontalEnd(rect: Rect2) {
         return rect.x + rect.w;
     }
 
     getVerticalEnd(rect: Rect2) {
         return rect.y + rect.h;
+    }
+
+    // Index conversions
+    getIndexCount(rect: Rect2): number {
+        return rect.w * rect.h;
+    }
+
+    getXAtIndex(rect: Rect2, index: number) {
+        return index % rect.w;
+    }
+
+    getYAtIndex(rect: Rect2, index: number) {
+        return (index / rect.w) | 0;  // x | 0 => floor(x)
+    }
+
+    getPosAtIndex(rect: Rect2, index: number, target: vec2 = vec2.create()) {
+        target[0] = this.getXAtIndex(rect, index);
+        target[1] = this.getYAtIndex(rect, index);
+        return target;
+    }
+
+    getIndexAtPosUnchecked(rect: Rect2, pos: Readonly<vec2>) {
+        return pos[0] - rect.x +  // Horizontal component
+            (pos[1] - rect.y) * rect.w;  // Vertical component
+    }
+
+    getIndexAtPosChecked(rect: Rect2, pos: Readonly<vec2>, max_index: number): number | null {
+        const x_comp = pos[0] - rect.x;
+        if (x_comp < 0 || x_comp >= rect.w) {
+            return null;
+        }
+
+        const y_comp = pos[1] - rect.y;
+        if (y_comp < 0) {
+            return null;
+        }
+
+        const index = x_comp + rect.w * y_comp;
+        return index < max_index ? index : null;
+    }
+
+    getIndicesUntilLineEndNoMax(rect: Rect2, x_pos: number): number {
+        return Rect2.getHorizontalEnd(rect) - x_pos;
+    }
+
+    getIndicesUntilLineEnd(rect: Rect2, pos: Readonly<vec2>, max_index: number): number {
+        return Math.min(
+            this.getIndicesUntilLineEndNoMax(rect, pos[0]),  // Assuming we are not on the last line
+            max_index - this.getIndexAtPosUnchecked(rect, pos) + 1  // Assuming we are on the last line.
+            // Note: the +1 ensures interface consistency since this returns the number of indices to *wrap around*!
+        );
     }
 })();

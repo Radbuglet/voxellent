@@ -9,7 +9,7 @@ export class RectIterator {
     setArea(rect: Rect2) {
         Rect2.copy(this.rect, rect);
         this.index = 0;
-        this.max_index = rect.w * rect.h;
+        this.max_index = Rect2.areaOf(rect);
     }
 
     // Iterator querying

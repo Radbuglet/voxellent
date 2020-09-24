@@ -11,11 +11,15 @@ export const ChunkIndex = new (class {
 
     // Vector-index interactions
     fromWorldVector(vec: Readonly<vec3>) {
-        return this.fromChunkVector(vec[0] & CHUNK_EDGE_SIZE, vec[1] & CHUNK_EDGE_SIZE, vec[2] & CHUNK_EDGE_SIZE);
+        return this.fromChunkPosition(vec[0] & CHUNK_EDGE_SIZE, vec[1] & CHUNK_EDGE_SIZE, vec[2] & CHUNK_EDGE_SIZE);
     }
 
-    fromChunkVector(x: number, y: number, z: number) {
+    fromChunkPosition(x: number, y: number, z: number) {
         return x + (y << BITS_PER_CHUNK_COMP) + (z << 2 * BITS_PER_CHUNK_COMP);
+    }
+
+    fromChunkPosVector(vec: Readonly<vec3>) {
+        return this.fromChunkPosition(vec[0], vec[1], vec[2]);
     }
 
     addToVector(index: ChunkIndex, target: vec3 = vec3.create()) {
@@ -44,7 +48,7 @@ export const ChunkIndex = new (class {
         return (index >> axis * BITS_PER_CHUNK_COMP) & CHUNK_EDGE_SIZE;
     }
 
-    getEdgeFace(index: ChunkIndex, axis: Axis): VoxelFace | null {
+    getChunkEdgeFace(index: ChunkIndex, axis: Axis): VoxelFace | null {
         const comp  = this.getComponent(index, axis);
         if (comp === 0) {
             return FaceUtils.fromParts(axis, -1);
@@ -85,7 +89,7 @@ export const WorldSpaceUtils = new (class {
     }
 
     wsGetChunkIndex(vec: Readonly<vec3>) {
-        return ChunkIndex.fromChunkVector(
+        return ChunkIndex.fromChunkPosition(
             vec[0] & CHUNK_EDGE_SIZE,
             vec[1] & CHUNK_EDGE_SIZE,
             vec[2] & CHUNK_EDGE_SIZE);

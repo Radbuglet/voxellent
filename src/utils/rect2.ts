@@ -45,10 +45,6 @@ export const Rect2 = new (class {
     }
 
     // Index conversions
-    getIndexCount(rect: Rect2): number {
-        return rect.w * rect.h;
-    }
-
     getXAtIndex(rect: Rect2, index: number) {
         return index % rect.w;
     }

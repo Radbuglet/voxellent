@@ -1,5 +1,4 @@
 import {Sign} from "./vecUtils";
-import {vec2, vec3} from "gl-matrix";
 
 export enum Axis {
     x, y, z
@@ -69,19 +68,7 @@ export const FaceUtils = new (class {
         return this.axes;
     }
 
-    intersectFaceOrtho(face_axis: Axis, face_depth: number, origin: vec3, end: vec3, target: vec3 = vec3.create()): vec3 | null {
-        const time = (face_depth - origin[face_axis]) / (end[face_axis] - origin[face_axis]);
-        return time < 0 || time > 1 ? null : vec3.lerp(target, origin, end, time);
-    }
-
     getOrthoAxes(axis: Axis) {
         return this.ortho_axes[axis];
-    }
-
-    orthoProject(axis: Axis, vec: vec3, target: vec2 = vec2.create()) {
-        const axes = this.getOrthoAxes(axis);
-        target[0] = vec[axes[0]];
-        target[1] = vec[axes[1]];
-        return target;
     }
 })();

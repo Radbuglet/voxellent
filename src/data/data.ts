@@ -10,7 +10,9 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
     private readonly chunks = new Map<VectorKey, TChunk>();
 
     addChunk(pos: Readonly<vec3>, instance: TChunk) {
-        console.assert(!this.chunks.has(VecUtils.getVectorKey(pos)) && VecUtils.isIntVec(pos as vec3));
+        console.assert(VecUtils.isIntVec(pos as vec3));
+        console.assert(!this.chunks.has(VecUtils.getVectorKey(pos)));
+        console.assert(!instance[VoxelChunk.type].in_world);
 
         // Add the root chunk
         const chunk_pos = instance[VoxelChunk.type].outer_pos;
@@ -47,7 +49,7 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
         this.chunks.delete(VecUtils.getVectorKey(pos));
 
         // Mark chunk as no longer in a world.
-        removed_chunk[VoxelChunk.type].in_world = true;
+        removed_chunk[VoxelChunk.type].in_world = false;
 
         return true;
     }

@@ -37,7 +37,7 @@ export class ChunkMeshingQueue<TCtx> {
     flagVoxelFaces(chunk: DirtyChunk<TCtx>, index: ChunkIndex) {
         let flagged_self = false;
         for (const axis of FaceUtils.getAxes()) {
-            const face = ChunkIndex.getEdgeFace(index, axis);
+            const face = ChunkIndex.getChunkEdgeFace(index, axis);
             if (face != null) {
                 this.flagChunkNeighbor(chunk, face);
             } else if (!flagged_self) {

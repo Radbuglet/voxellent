@@ -4,6 +4,8 @@ import {ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VoxelChunk, VoxelWorld} from "./data";
 
+const default_max_chunk_traversal = 32;
+
 export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     private static readonly work_vec = vec3.create();
 
@@ -78,18 +80,18 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.chunk_cache = undefined;
     }
 
-    setWorldPosRegional(pos: Readonly<vec3>) {
+    setWorldPosRegional(pos: Readonly<vec3>, max_cache_traversal: number = default_max_chunk_traversal) {
         // Find movement delta
         this.getWorldPos(VoxelPointer.work_vec);
         vec3.sub(VoxelPointer.work_vec, pos as vec3, VoxelPointer.work_vec);
 
         // Move by the delta
-        this.moveByMut(VoxelPointer.work_vec);
+        this.moveByMut(VoxelPointer.work_vec, max_cache_traversal);
     }
 
-    setPosRelativeTo(pointer: VoxelPointer<TChunk>, delta: Readonly<vec3>) {
+    setPosRelativeTo(pointer: VoxelPointer<TChunk>, delta: Readonly<vec3>, max_cache_traversal: number = default_max_chunk_traversal) {
         pointer.copyTo(this);
-        this.moveByMut(delta);
+        this.moveByMut(delta, max_cache_traversal);
     }
 
     setPosInChunk(chunk: TChunk, index: ChunkIndex) {
@@ -99,7 +101,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     // Neighbor querying
-    getNeighborMut(face: VoxelFace, magnitude: number = 1) {
+    getNeighborMut(face: VoxelFace, magnitude: number = 1, max_cache_traversal: number = default_max_chunk_traversal) {
         const axis = FaceUtils.getAxis(face);
         const sign = FaceUtils.getSign(face);
         const index = ChunkIndex.add(this.inner_pos, axis, sign * magnitude);
@@ -113,6 +115,10 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         if (traversed_chunks > 0) {
             this.ensureValidChunkCache();
             while (this.chunk_cache != null && traversed_chunks > 0) {
+                if (--max_cache_traversal <= 0) {
+                    this.chunk_cache = undefined;
+                    break;
+                }
                 this.chunk_cache = this.chunk_cache[VoxelChunk.type].getNeighbor(face);
             }
         }
@@ -120,20 +126,20 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         return this;
     }
 
-    getNeighborCopy(face: VoxelFace, magnitude?: number) {
-        return this.clone().getNeighborMut(face, magnitude);
+    getNeighborCopy(face: VoxelFace, magnitude?: number, max_cache_traversal: number = default_max_chunk_traversal) {
+        return this.clone().getNeighborMut(face, magnitude, max_cache_traversal);
     }
 
     // Relative movement
-    moveByMut(delta: Readonly<vec3>) {
+    moveByMut(delta: Readonly<vec3>, max_cache_traversal: number = default_max_chunk_traversal) {
         // Move the pointer to the target position using neighbor traversals.
         for (const axis of FaceUtils.getAxes()) {
-            this.getNeighborMut(FaceUtils.fromParts(axis, FaceUtils.signOf(delta[axis])), Math.abs(delta[axis]));
+            this.getNeighborMut(FaceUtils.fromParts(axis, FaceUtils.signOf(delta[axis])), Math.abs(delta[axis]), max_cache_traversal);
         }
     }
 
-    moveByCopy(delta: Readonly<vec3>) {
-        return this.clone().moveByMut(delta);
+    moveByCopy(delta: Readonly<vec3>, max_cache_traversal: number = default_max_chunk_traversal) {
+        return this.clone().moveByMut(delta, max_cache_traversal);
     }
 
     // Memory management

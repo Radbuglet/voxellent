@@ -4,6 +4,8 @@ export type VectorKey = string;
 export type Sign = -1 | 1;
 
 export const VecUtils = new (class {
+    public readonly work_vec = vec3.create();
+
     validateVec(vec: Iterable<number>, validator: (v: number) => boolean) {
         for (const dim of vec) {
             if (!validator(dim))

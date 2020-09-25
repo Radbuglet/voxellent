@@ -3,14 +3,13 @@ import {vec3} from "gl-matrix";
 import {ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VoxelChunk, VoxelWorld} from "./data";
+import {VecUtils} from "../utils/vecUtils";
 
 const default_max_chunk_traversal = 32;
 
 export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
-    private static readonly work_vec = vec3.create();
-
     // Construction
-    private constructor(public outer_pos = vec3.create(), public inner_pos: ChunkIndex = 0, public chunk_cache?: TChunk) {}
+    private constructor(public outer_pos = vec3.create(), public inner_pos: ChunkIndex = 0, private chunk_cache?: TChunk) {}
 
     static empty<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>() {
         return new VoxelPointer<TChunk>();
@@ -82,11 +81,11 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
 
     setWorldPosRegional(pos: Readonly<vec3>, max_cache_traversal: number = default_max_chunk_traversal) {
         // Find movement delta
-        this.getWorldPos(VoxelPointer.work_vec);
-        vec3.sub(VoxelPointer.work_vec, pos as vec3, VoxelPointer.work_vec);
+        this.getWorldPos(VecUtils.work_vec);
+        vec3.sub(VecUtils.work_vec, pos as vec3, VecUtils.work_vec);
 
         // Move by the delta
-        this.moveByMut(VoxelPointer.work_vec, max_cache_traversal);
+        this.moveByMut(VecUtils.work_vec, max_cache_traversal);
     }
 
     setPosRelativeTo(pointer: VoxelPointer<TChunk>, delta: Readonly<vec3>, max_cache_traversal: number = default_max_chunk_traversal) {

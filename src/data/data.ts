@@ -2,7 +2,7 @@ import {vec3} from "gl-matrix";
 import {P$} from "ts-providers";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VectorKey, VecUtils} from "../utils/vecUtils";
-import {CHUNK_EDGE_SIZE, ChunkIndex} from "./chunkIndex";
+import {ChunkIndex} from "./chunkIndex";
 import {BufferUtils, PrimitiveByteCount} from "../utils/bufferUtils";
 
 export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
@@ -108,7 +108,7 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
         this.updateBytesPerVoxel();
 
         // Reallocate the buffer
-        this.data = new DataView(new ArrayBuffer(this.bytes_per_voxel * CHUNK_EDGE_SIZE ** 3));
+        this.data = new DataView(new ArrayBuffer(this.bytes_per_voxel * ChunkIndex.chunk_voxel_count));
     }
 
     ensureDataAllocation() {

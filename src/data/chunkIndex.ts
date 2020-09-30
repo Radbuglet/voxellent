@@ -2,7 +2,7 @@ import {Axis, FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {vec3} from "gl-matrix";
 
 export type ChunkIndex = number;
-export const ChunkIndex = new (class {
+export const ChunkIndex = new class {
     public readonly bits_per_chunk_comp = 4;
     public readonly chunk_edge_size = 2 ** this.bits_per_chunk_comp;
     public readonly chunk_voxel_count = this.chunk_edge_size ** 3;
@@ -64,9 +64,9 @@ export const ChunkIndex = new (class {
             yield i;
         }
     }
-})();
+}();
 
-export const WorldSpaceUtils = new (class {
+export const WorldSpaceUtils = new class {
     wsGetChunkOuter(vec: Readonly<vec3>, target: vec3 = vec3.create()) {
         target[0] = vec[0] >> ChunkIndex.bits_per_chunk_comp;
         target[1] = vec[1] >> ChunkIndex.bits_per_chunk_comp;
@@ -94,4 +94,4 @@ export const WorldSpaceUtils = new (class {
             vec[1] & ChunkIndex.chunk_edge_size,
             vec[2] & ChunkIndex.chunk_edge_size);
     }
-})();
+}();

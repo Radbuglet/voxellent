@@ -9,7 +9,7 @@ export type UlRect2 = {
 };
 export type Rect2 = Readonly<UlRect2>;
 
-export const Rect2 = new (class {
+export const Rect2 = new class {
     create(x: number = 0, y: number = 0, w: number = 0, h: number = 0): UlRect2 {
         return { x, y, w, h };
     }
@@ -90,4 +90,4 @@ export const Rect2 = new (class {
             // Note: the +1 ensures interface consistency since this returns the number of indices to *wrap around*!
         );
     }
-})();
+}();

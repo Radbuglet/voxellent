@@ -10,7 +10,7 @@ export enum VoxelFace {
     pz, nz
 }
 
-export const FaceUtils = new (class {
+export const FaceUtils = new class {
     private readonly axes: Axis[] = [];
     private readonly faces: VoxelFace[] = [];
     private readonly ortho_axes: [Axis, Axis][] = [];
@@ -71,4 +71,4 @@ export const FaceUtils = new (class {
     getOrthoAxes(axis: Axis) {
         return this.ortho_axes[axis];
     }
-})();
+}();

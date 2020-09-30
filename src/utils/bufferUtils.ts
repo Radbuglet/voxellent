@@ -1,6 +1,6 @@
 export type PrimitiveByteCount = 1 | 2 | 4;
 
-export const BufferUtils = new (class {
+export const BufferUtils = new class {
     private readonly getter_methods: ("getUint8" | "getUint16" | "getUint32")[] = [
         "getUint8",
         "getUint16",
@@ -22,4 +22,4 @@ export const BufferUtils = new (class {
     setUintDynamic(view: DataView, size: PrimitiveByteCount, offset: number, value: number) {
         return view[this.setter_methods[size]](offset, value);
     }
-})();
+}();

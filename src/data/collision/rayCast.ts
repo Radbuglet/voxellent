@@ -24,7 +24,6 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
 
     // This is used to increment the dist_at_[x-z]_cross values so that they properly represent how far the vector
     // will go to reach the next breach.
-    // TODO: There's not really a reason to use these "fake vectors".
     private cross_dist_step_x!: number;
     private cross_dist_step_y!: number;
     private cross_dist_step_z!: number;

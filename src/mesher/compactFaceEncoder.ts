@@ -1,8 +1,9 @@
 import {ChunkIndex} from "../data/chunkIndex";
 import {Axis, FaceUtils, VoxelFace} from "../utils/faceUtils";
+import {WritableArrayLike} from "../utils/vecUtils";
 
-type ShaderChunkIndex = number;
-const ShaderChunkIndex = new class {
+export type ShaderChunkIndex = number;
+export const ShaderChunkIndex = new class {
     public readonly index_flag_bit_count = 3;
     public readonly index_flag_bit_mask = (2 ** this.index_flag_bit_count) - 1;
 
@@ -25,42 +26,42 @@ const ShaderChunkIndex = new class {
     }
 }();
 
-export class CompactFaceBuffer {
+export const CompactFaceEncoder = new class {
     // Config properties
     public static readonly words_per_face = 6;
     public static readonly vap_config = {
         size: 1,
         type: WebGLRenderingContext.UNSIGNED_SHORT,
-        normalized: false,
-        stride: 0,
-        offset: 0
+        normalized: false
     } as const;
 
     // Shader generation methods
-    public static genShaderParseFunc(name: string): string {
-        throw "Not implemented";  // TODO
+    genShaderParseFunc(name: string) {
+        const { chunk_edge_length: edge_length } = ChunkIndex;
+        return `vec3 ${name}(int vertex) {
+    vec3 accumulator;
+    accumulator.y += mod(vertex /= ${edge_length}, ${edge_length});
+    accumulator.x += mod(vertex /= ${edge_length}, ${edge_length});
+    accumulator.z += mod(vertex /= ${edge_length}, ${edge_length});
+
+    if ((vertex /= 2) == 0) {
+        accumulator.x = ${edge_length};
     }
 
-    // Write stream properties
-    public buffer!: Uint16Array;
-    private write_offset = 0;
-
-    // Constructor
-    constructor(face_count: number) {
-        this.resize(face_count);
+    if ((vertex /= 2) == 0) {
+        accumulator.y = ${edge_length};
     }
 
-    // Buffer management
-    resize(face_count: number) {
-        this.buffer = new Uint16Array(face_count * CompactFaceBuffer.words_per_face);
+    if ((vertex /= 2) == 0) {
+        accumulator.z = ${edge_length};
     }
 
-    clear() {
-        this.write_offset = 0;
+    return accumulator;
+}\n`;
     }
 
     // Face writing
-    addFace(voxel: ChunkIndex, face: VoxelFace, ccw_culling: boolean = true) {  // TODO: Check vertex cull ordering logic
+    writeFace(buffer: WritableArrayLike<number>, root: number, stride: number, voxel: ChunkIndex, face: VoxelFace, ccw_culling: boolean = true) {
         // >> Get axes operated on
         const axis = FaceUtils.getAxis(face);
         const ortho_axes = FaceUtils.getOrthoAxes(axis);
@@ -79,12 +80,9 @@ export class CompactFaceBuffer {
 
         // >> Write the vertices to the buffer
         const flip_ab_vertices = ccw_culling === is_opposite_side;
-        this.buffer[this.write_offset] = this.buffer[this.write_offset + 3] = root_index;
-        this.buffer[this.write_offset + 2] = this.buffer[this.write_offset + 5] = vertex_diag;
-        this.buffer[this.write_offset + 1] = flip_ab_vertices ? vertex_b : vertex_a;
-        this.buffer[this.write_offset + 4] = flip_ab_vertices ? vertex_a : vertex_b;
-
-        // >> Move the write offset
-        this.write_offset += CompactFaceBuffer.words_per_face;
+        buffer[root] = buffer[root + 3] = root_index;
+        buffer[root + 2] = buffer[root + 5] = vertex_diag;
+        buffer[root + 1] = flip_ab_vertices ? vertex_b : vertex_a;
+        buffer[root + 4] = flip_ab_vertices ? vertex_a : vertex_b;
     }
-}
+}();

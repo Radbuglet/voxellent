@@ -80,9 +80,9 @@ export const CompactFaceEncoder = new class {
 
         // >> Write the vertices to the buffer
         const flip_ab_vertices = ccw_culling === is_opposite_side;
-        buffer[root] = buffer[root + 3] = root_index;
-        buffer[root + 2] = buffer[root + 5] = vertex_diag;
-        buffer[root + 1] = flip_ab_vertices ? vertex_b : vertex_a;
-        buffer[root + 4] = flip_ab_vertices ? vertex_a : vertex_b;
+        buffer[root] = buffer[root + 3 * stride] = root_index;
+        buffer[root + 2 * stride] = buffer[root + 5 * stride] = vertex_diag;
+        buffer[root + stride] = flip_ab_vertices ? vertex_b : vertex_a;
+        buffer[root + 4 * stride] = flip_ab_vertices ? vertex_a : vertex_b;
     }
 }();

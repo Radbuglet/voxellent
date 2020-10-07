@@ -10,7 +10,7 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
     addChunk(pos: Readonly<vec3>, instance: TChunk) {
         console.assert(VecUtils.isIntVec(pos as vec3));
         console.assert(!this.chunks.has(VecUtils.getVectorKey(pos)));
-        console.assert(!instance[VoxelChunk.type].in_world);
+        console.assert(instance[VoxelChunk.type].status === VoxelChunkStatus.New);
 
         // Add the root chunk
         const chunk_pos = instance[VoxelChunk.type].outer_pos;
@@ -18,7 +18,7 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
         this.chunks.set(VecUtils.getVectorKey(pos), instance);
 
         // Flag chunk
-        instance[VoxelChunk.type].in_world = true;
+        instance[VoxelChunk.type].status = VoxelChunkStatus.InWorld;
 
         // Link with neighbors
         for (const face of FaceUtils.getFaces()) {
@@ -47,7 +47,7 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
         this.chunks.delete(VecUtils.getVectorKey(pos));
 
         // Mark chunk as no longer in a world.
-        removed_chunk[VoxelChunk.type].in_world = false;
+        removed_chunk[VoxelChunk.type].status = VoxelChunkStatus.Freed;
 
         return true;
     }
@@ -57,11 +57,17 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
     }
 }
 
+export enum VoxelChunkStatus {
+    New,
+    InWorld,
+    Freed
+}
+
 export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeighbor>>> {
     public static readonly type = Symbol();
 
     // Chunk position properties
-    public in_world = false;
+    public status = VoxelChunkStatus.New;
     public readonly outer_pos: vec3 = vec3.create();
     private readonly neighbors: (TNeighbor | undefined)[] = new Array(6);
 

@@ -2,7 +2,7 @@ import {P$} from "ts-providers";
 import {vec3} from "gl-matrix";
 import {ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
-import {VoxelChunk, VoxelWorld} from "./worldStore";
+import {VoxelChunk, VoxelChunkStatus, VoxelWorld} from "./worldStore";
 import {VecUtils} from "../utils/vecUtils";
 
 const default_max_chunk_traversal = 32;
@@ -36,7 +36,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
 
     // Chunk reference management
     hasChunkCache() {
-        return this.chunk_cache != null && this.chunk_cache[VoxelChunk.type].in_world;
+        return this.chunk_cache != null && this.chunk_cache[VoxelChunk.type].status === VoxelChunkStatus.InWorld;
     }
 
     getChunk(world: VoxelWorld<TChunk>): TChunk | undefined {
@@ -58,7 +58,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     private ensureValidChunkCache() {
-        if (this.chunk_cache != null && !this.chunk_cache[VoxelChunk.type].in_world) {
+        if (this.chunk_cache != null && this.chunk_cache[VoxelChunk.type].status !== VoxelChunkStatus.InWorld) {
             this.chunk_cache = undefined;
         }
     }

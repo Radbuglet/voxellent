@@ -1,5 +1,6 @@
 import {Axis, FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {vec3} from "gl-matrix";
+import {Sign} from "../utils/vecUtils";
 
 export type ChunkIndex = number;
 export const ChunkIndex = new class {
@@ -64,6 +65,11 @@ export const ChunkIndex = new class {
         for (let i = 0; i < this.chunk_voxel_count; i++) {
             yield i;
         }
+    }
+
+    // Composite utils
+    getComponentDistToEdge(index: ChunkIndex, axis: Axis, sign: Sign) {
+        return FaceUtils.distToEdge(this.getComponent(index, axis), this.chunk_edge_length, sign);
     }
 }();
 

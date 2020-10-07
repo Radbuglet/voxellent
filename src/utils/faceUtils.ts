@@ -41,6 +41,10 @@ export const FaceUtils = new class {
         return v > 0 ? 1 : -1;
     }
 
+    distToEdge(value: number, max: number, sign: Sign) {
+        return sign === 1 ? max - value : value;
+    }
+
     fromParts(axis: Axis, sign: Sign): VoxelFace {
         return axis * 2 + (sign === 1 ? 0 : 1);
     }

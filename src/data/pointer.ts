@@ -15,6 +15,12 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         return new VoxelPointer<TChunk>();
     }
 
+    static fromPair<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(outer_pos: Readonly<vec3>, inner_pos: ChunkIndex) {
+        const pointer = new VoxelPointer(vec3.create(), inner_pos);
+        vec3.copy(pointer.outer_pos, outer_pos as vec3);
+        return pointer;
+    }
+
     static fromPos<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(pos: Readonly<vec3>) {
         const instance = new VoxelPointer<TChunk>();
         instance.setWorldPos(pos);
@@ -39,11 +45,6 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         return this.chunk_cache != null && this.chunk_cache[VoxelChunk.type].status === VoxelChunkStatus.InWorld;
     }
 
-    getChunk(world: VoxelWorld<TChunk>): TChunk | undefined {
-        this.refreshChunkCache(world);
-        return this.chunk_cache;
-    }
-
     clearChunkCache() {
         this.chunk_cache = undefined;
     }
@@ -55,6 +56,11 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
 
     refreshChunkCache(world: VoxelWorld<TChunk>): boolean {
         return this.hasChunkCache() || this.forceRefreshChunkCache(world);
+    }
+
+    getChunk(world: VoxelWorld<TChunk>): TChunk | undefined {
+        this.refreshChunkCache(world);
+        return this.chunk_cache;
     }
 
     private ensureValidChunkCache() {

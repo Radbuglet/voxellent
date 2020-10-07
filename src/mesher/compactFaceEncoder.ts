@@ -38,23 +38,21 @@ export const CompactFaceEncoder = new class {
     // Shader generation methods
     genShaderParseFunc(name: string) {
         const { chunk_edge_length: edge_length } = ChunkIndex;
-        return `vec3 ${name}(int vertex) {
+        return `
+vec3 ${name}(int vertex) {
     vec3 accumulator;
     accumulator.y += mod(vertex /= ${edge_length}, ${edge_length});
     accumulator.x += mod(vertex /= ${edge_length}, ${edge_length});
     accumulator.z += mod(vertex /= ${edge_length}, ${edge_length});
 
-    if ((vertex /= 2) == 0) {
+    if ((vertex /= 2) == 0)
         accumulator.x = ${edge_length};
-    }
 
-    if ((vertex /= 2) == 0) {
+    if ((vertex /= 2) == 0)
         accumulator.y = ${edge_length};
-    }
 
-    if ((vertex /= 2) == 0) {
+    if ((vertex /= 2) == 0)
         accumulator.z = ${edge_length};
-    }
 
     return accumulator;
 }\n`;

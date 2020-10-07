@@ -2,8 +2,6 @@ import {vec3} from "gl-matrix";
 import {P$} from "ts-providers";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VectorKey, VecUtils} from "../utils/vecUtils";
-import {ChunkIndex} from "./chunkIndex";
-import {BufferUtils, PrimitiveByteCount} from "../utils/bufferUtils";
 
 export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     public static readonly type = Symbol();

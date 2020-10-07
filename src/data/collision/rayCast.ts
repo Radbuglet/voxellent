@@ -1,9 +1,8 @@
 import {vec3} from "gl-matrix";
 import {Axis, FaceUtils, VoxelFace} from "../../utils/faceUtils";
-import {VoxelChunk} from "../data";
+import {VoxelChunk} from "../worldStore";
 import {P$} from "ts-providers";
 import {VoxelPointer} from "../pointer";
-import {ChunkIndex} from "../chunkIndex";
 
 // Adapted from the paper "A Fast Voxel Traversal Algorithm for Ray Tracing" by John Amanatides and Andrew Woo.
 // https://web.archive.org/web/20200215082332/http://www.cse.chalmers.se/edu/year/2010/course/TDA361/grid.pdf

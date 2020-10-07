@@ -1,6 +1,6 @@
 import {vec3} from "gl-matrix";
 import {Axis, FaceUtils} from "../../utils/faceUtils";
-import {VoxelChunk} from "../data";
+import {VoxelChunk} from "../worldStore";
 import {P$} from "ts-providers";
 import {VoxelPointer} from "../pointer";
 

@@ -1,7 +1,7 @@
 import {P$} from "ts-providers";
 import {vec3} from "gl-matrix";
 import {ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
-import {FaceUtils, VoxelFace} from "../utils/faceUtils";
+import {Axis, FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VoxelChunk, VoxelWorld} from "./data";
 import {VecUtils} from "../utils/vecUtils";
 
@@ -69,13 +69,9 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
             WorldSpaceUtils.chunkOuterGetWsRoot(this.outer_pos, target));
     }
 
-    _setWorldPosNoReattach(pos: Readonly<vec3>) {
+    setWorldPos(pos: Readonly<vec3>) {
         WorldSpaceUtils.wsGetChunkOuter(pos, this.outer_pos);
         this.inner_pos = WorldSpaceUtils.wsGetChunkIndex(pos);
-    }
-
-    setWorldPos(pos: Readonly<vec3>) {
-        this._setWorldPosNoReattach(pos);
         this.chunk_cache = undefined;
     }
 
@@ -97,6 +93,46 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         vec3.copy(this.outer_pos, chunk[VoxelChunk.type].outer_pos);
         this.inner_pos = index;
         this.chunk_cache = chunk;
+    }
+
+    setChunkPos(pos: Readonly<vec3>) {
+        vec3.copy(this.outer_pos, pos as vec3);
+        this.chunk_cache = undefined;
+    }
+
+    setChunkPosRegional(pos: Readonly<vec3>, max_chunk_traversal: number = default_max_chunk_traversal) {
+        this.moveByChunkMut(vec3.sub(VecUtils.work_vec, pos as vec3, this.outer_pos), max_chunk_traversal);
+    }
+
+    setInnerPos(pos: ChunkIndex) {
+        this.inner_pos = pos;
+    }
+
+    // Chunk relative movement
+    moveByChunkMut(chunk_delta: Readonly<vec3>, max_cache_traversal: number = default_max_chunk_traversal) {
+        // Update context-less position
+        vec3.add(this.outer_pos, this.outer_pos, chunk_delta as vec3);
+
+        // Update chunk cache
+        for (const axis of FaceUtils.getAxes()) {
+            if (this.chunk_cache == null) return;
+
+            let allowed_axis_traversal = max_cache_traversal;  // Uses per axis traversal limits for consistency.
+            const traversal_face = FaceUtils.fromParts(axis, FaceUtils.signOf(chunk_delta[axis]));
+
+            for (let i = 0; this.chunk_cache != null && i < Math.abs(chunk_delta[axis]); i++) {
+                if (--allowed_axis_traversal <= 0) {
+                    this.chunk_cache = undefined;
+                    return;
+                }
+
+                this.chunk_cache = this.chunk_cache[VoxelChunk.type].getNeighbor(traversal_face);
+            }
+        }
+    }
+
+    moveByChunkCopy(chunk_delta: Readonly<vec3>, max_cache_traversal: number = default_max_chunk_traversal) {
+        return this.clone().moveByChunkMut(chunk_delta, max_cache_traversal);
     }
 
     // Neighbor querying

@@ -3,13 +3,14 @@ import {Axis, FaceUtils, VoxelFace} from "../../utils/faceUtils";
 import {VoxelChunk} from "../data";
 import {P$} from "ts-providers";
 import {VoxelPointer} from "../pointer";
+import {ChunkIndex} from "../chunkIndex";
 
 // Adapted from the paper "A Fast Voxel Traversal Algorithm for Ray Tracing" by John Amanatides and Andrew Woo.
 // https://web.archive.org/web/20200215082332/http://www.cse.chalmers.se/edu/year/2010/course/TDA361/grid.pdf
 export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     // >> Status registers
     public breached_face = VoxelFace.px;
-    public distance_traveled: number = 0;
+    public distance_traveled = 0;
 
     // >> Traversal state
     // Represents the ray in world-space. This is used to convert distances back into positions.
@@ -92,7 +93,7 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         // the next cross.
 
         // Is x the minimum?
-        if (this.dist_at_x_cross < this.dist_at_y_cross && this.dist_at_x_cross < this.dist_at_z_cross) {  // Y cannot be the minimum
+        if (this.dist_at_x_cross < this.dist_at_y_cross && this.dist_at_x_cross < this.dist_at_z_cross) {
             // >> Update registers and yield
             this.breached_face = this.face_x;
             this.distance_traveled = this.dist_at_x_cross;

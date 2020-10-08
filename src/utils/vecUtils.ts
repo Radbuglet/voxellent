@@ -2,7 +2,7 @@ import {vec3} from "gl-matrix";
 
 export type VectorKey = string;
 export type Sign = -1 | 1;
-export type WritableArrayLike<T> = { [key: number]: T };
+export type MutableArrayLike<T> = { [key: number]: T };
 
 export const VecUtils = new class {
     public readonly work_vec = vec3.create();

@@ -1,6 +1,6 @@
 import {ChunkIndex} from "../data/chunkIndex";
-import {Axis} from "../utils/faceUtils";
-import {FaceVertexManipulator} from "./genericVertexGeneration";
+import {Axis, VoxelFace} from "../utils/faceUtils";
+import {FaceVertexManipulator, CoreVertexGeneration} from "./coreVertexGeneration";
 
 export type ShaderChunkIndex = number;
 export const ShaderChunkIndex = new class implements FaceVertexManipulator<ShaderChunkIndex> {
@@ -59,5 +59,7 @@ vec3 ${name}(int vertex) {
 }\n`;
     }
 
-    // TODO: Add back wrapper method
+    generateFace(voxel: ChunkIndex, face: VoxelFace, ccw_culling: boolean = true) {
+        return CoreVertexGeneration.generateFaceGeneric<ShaderChunkIndex>(voxel, face, ShaderChunkIndex, ccw_culling);
+    }
 }();

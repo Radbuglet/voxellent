@@ -1,5 +1,5 @@
-import {BufferUtils, PrimitiveByteCount} from "../utils/bufferUtils";
-import {ChunkIndex} from "./chunkIndex";
+import {BufferUtils, PrimitiveByteCount} from "../../utils/bufferUtils";
+import {ChunkIndex} from "../chunkIndex";
 
 export class VoxelChunkData {
     public static readonly type = Symbol();

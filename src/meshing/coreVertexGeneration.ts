@@ -7,11 +7,36 @@ export interface FaceVertexManipulator<T> {
     addPositive(index: T, axis: Axis, magnitude: number): T;
 }
 
-export const GenericVertexGeneration = new class {
-    // TODO: Support for generic quad producing
+export const CoreVertexGeneration = new class {
+    writeVertices(buffer: MutableArrayLike<number>, root: number, stride: number, mesh: IterableIterator<number | IterableIterator<number>>) {
+        let write_target = root;
+        for (const vertex of mesh) {
+            console.assert(write_target - root % stride === 0);
 
-    writeVertices(buffer: MutableArrayLike<number>, root: number, stride: number, mesh: IterableIterator<number>) {
-        // TODO
+            // Write data
+            if (typeof vertex === "number") {
+                buffer[write_target] = vertex;
+            } else {
+                for (const data of vertex) {
+                    buffer[write_target++] = data;
+                }
+            }
+
+            // Move offset
+            write_target += stride;
+        }
+    }
+
+    *generateQuadGeneric<T>(a: T, b: T, c: T, d: T, ccw_culling: boolean = true): IterableIterator<T> {
+        // Triangle 1
+        yield a;
+        yield ccw_culling ? b : c;
+        yield ccw_culling ? c : b;
+
+        // Triangle 2
+        yield a;
+        yield ccw_culling ? c : d;
+        yield ccw_culling ? d : c;
     }
 
     // TODO: Add support for slabs
@@ -42,7 +67,7 @@ export const GenericVertexGeneration = new class {
 
         // Triangle 2
         yield root_index;
-        yield flip_ab_vertices ? vertex_b : vertex_a;
         yield vertex_diag;
+        yield flip_ab_vertices ? vertex_b : vertex_a;
     }
 }();

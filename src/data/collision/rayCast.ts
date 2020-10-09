@@ -3,6 +3,8 @@ import {Axis, FaceUtils, VoxelFace} from "../../utils/faceUtils";
 import {VoxelChunk} from "../worldStore";
 import {P$} from "ts-providers";
 import {VoxelPointer} from "../pointer";
+import {ChunkIndex} from "../chunkIndex";
+import {VecUtils} from "../../utils/vecUtils";
 
 // Adapted from the paper "A Fast Voxel Traversal Algorithm for Ray Tracing" by John Amanatides and Andrew Woo.
 // https://web.archive.org/web/20200215082332/http://www.cse.chalmers.se/edu/year/2010/course/TDA361/grid.pdf
@@ -79,6 +81,12 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.distance_traveled = 0;
     }
 
+    getFaceIntersection(target: vec3 = vec3.create()): vec3 {
+        vec3.scale(target, this.direction as vec3, this.distance_traveled);
+        vec3.add(target, this.origin as vec3, target);
+        return target;
+    }
+
     // >> Ray-cast logic
     step() {
         // >> The face we cross will be on the axis which requires the least amount of distance to get to.
@@ -107,9 +115,30 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.dist_at_cross[closest_axis] += this.cross_dist_step[closest_axis];
     }
 
-    getFaceIntersection(target: vec3 = vec3.create()): vec3 {
-        vec3.scale(target, this.direction as vec3, this.distance_traveled);
-        vec3.add(target, this.origin as vec3, target);
-        return target;
+    skipChunk() {
+        // >> Find closest chunk face to be crossed
+        let closest_axis!: Axis;
+        let min_dist_at_cross = Infinity;
+
+        for (const axis of FaceUtils.getAxes()) {
+            const dist_at_cross = this.dist_at_cross[axis] + this.cross_dist_step[axis] * ChunkIndex.getComponentDistToEdge(
+                this.pointer.inner_pos, axis, FaceUtils.signOf(this.direction[axis]));
+
+            if (dist_at_cross < min_dist_at_cross) {
+                min_dist_at_cross = dist_at_cross;
+                closest_axis = axis;
+            }
+        }
+
+        // >> Update registers
+        const dist_moved = min_dist_at_cross - this.distance_traveled;
+        this.dist_at_cross[0] += dist_moved;
+        this.dist_at_cross[1] += dist_moved;
+        this.dist_at_cross[2] += dist_moved;
+        this.distance_traveled += min_dist_at_cross;
+        this.breached_face = this.axis_faces[closest_axis];
+
+        // >> Move voxel pointer
+        this.pointer.moveByMut(vec3.scale(VecUtils.work_vec, this.direction as vec3, dist_moved));
     }
 }

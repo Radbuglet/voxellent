@@ -4,6 +4,7 @@
   "description": "A complete rewrite my voxel-engine project.",
   "main": "lib/index.js",
   "scripts": {
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -12,7 +13,6 @@
   },
   "keywords": [
     "voxel",
-    "WebGL",
     "game"
   ],
   "author": "",
@@ -23,10 +23,10 @@
   "homepage": "https://github.com/radbuglet/voxel-engine-rewritten#readme",
   "devDependencies": {
     "@types/gl-matrix": "^2.4.5",
-    "gl-matrix": "^3.3.0",
     "typescript": "^3.9.6"
   },
   "dependencies": {
-    "ts-providers": "^0.2.1"
+    "ts-providers": "^0.2.1",
+    "gl-matrix": "^3.3.0"
   }
 }

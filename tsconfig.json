@@ -1,9 +1,18 @@
 {
   "compilerOptions": {
-    "experimentalDecorators": true,
     "strict": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "node",
     "target": "ES6",
-    "module": "CommonJS"
-  }
+    "module": "ESNext",
+    "outDir": "./dist",
+    "removeComments": true,
+
+    "skipLibCheck": true,  // For gl-matrix
+    "declaration": true,
+    "plugins": []  // TODO: Remove @internal
+  },
+  "files": [
+    "src/index.headless.ts",
+    "src/index.client.ts"
+  ]
 }

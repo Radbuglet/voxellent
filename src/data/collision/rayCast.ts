@@ -2,7 +2,7 @@ import {vec3} from "gl-matrix";
 import {Axis, FaceUtils, VoxelFace} from "../../utils/faceUtils";
 import {VoxelChunk} from "../worldStore";
 import {P$} from "ts-providers";
-import {VoxelPointer} from "../pointer";
+import {ReadonlyVoxelPointer, VoxelPointer} from "../pointer";
 import {ChunkIndex} from "../chunkIndex";
 import {VecUtils} from "../../utils/vecUtils";
 
@@ -15,9 +15,9 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
 
     // >> Traversal state
     // Represents the ray in world-space. This is used to convert distances back into positions.
-    public readonly pointer = VoxelPointer.empty<TChunk>();
-    public origin!: Readonly<vec3>;
-    public direction!: Readonly<vec3>;
+    private readonly _pointer = VoxelPointer.empty<TChunk>();
+    private _origin!: Readonly<vec3>;
+    private _direction!: Readonly<vec3>;
 
     // Represents the faces associated with breaching on a given axis
     private axis_faces: VoxelFace[] = new Array(3);  // These will be initialized.
@@ -36,19 +36,19 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
 
     // >> Warp logic
     private warpPositionNoPtr(new_origin: Readonly<vec3>) {
-        this.origin = new_origin;
+        this._origin = new_origin;
 
         // Update distances at next cross.
         for (const axis of FaceUtils.getAxes()) {
-            this.dist_at_cross[axis] = this.direction[axis] === 0 ? Infinity :  // If this component is zero, we will never cross
+            this.dist_at_cross[axis] = this._direction[axis] === 0 ? Infinity :  // If this component is zero, we will never cross
                 // Otherwise, the distance is equal to the full length distance times the percent of the axis already traversed.
-                this.cross_dist_step[axis] * -FaceUtils.signOf(this.direction[axis]) * (Math.floor(this.origin[axis]) - this.origin[axis]);
+                this.cross_dist_step[axis] * -FaceUtils.signOf(this._direction[axis]) * (Math.floor(this._origin[axis]) - this._origin[axis]);
         }
     }
 
     private warpOnlyDirection(new_direction: Readonly<vec3>) {
         // Update the world-space direction state
-        this.direction = new_direction;
+        this._direction = new_direction;
 
         // Update directional state
         for (const axis of FaceUtils.getAxes()) {
@@ -60,18 +60,30 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         }
     }
 
-    warpPosition(new_origin: Readonly<vec3>) {
-        this.pointer.setWorldPosRegional(new_origin);  // Pointer needs to be changed.
+    get pointer(): ReadonlyVoxelPointer<TChunk> {
+        return this._pointer;
+    }
+
+    get origin(): Readonly<vec3> {
+        return this._origin;
+    }
+
+    set origin(new_origin: Readonly<vec3>) {
+        this._pointer.setWorldPosRegional(new_origin);  // Pointer needs to be changed.
         this.warpPositionNoPtr(new_origin);  // To need to refresh direction.
     }
 
-    warpDirection(new_direction: Readonly<vec3>) {
+    get direction(): Readonly<vec3> {
+        return this._direction;
+    }
+
+    set direction(new_direction: Readonly<vec3>) {
         this.warpOnlyDirection(new_direction);
-        this.warpPositionNoPtr(this.origin);  // The pointer is still valid, no need to refresh.
+        this.warpPositionNoPtr(this._origin);  // The pointer is still valid, no need to refresh.
     }
 
     warpPositionAndDirection(new_origin: Readonly<vec3>, new_direction: Readonly<vec3>) {
-        this.pointer.setWorldPosRegional(new_origin);  // Pointer needs refresh
+        this._pointer.setWorldPosRegional(new_origin);  // Pointer needs refresh
         this.warpOnlyDirection(new_direction);  // We first update the direction of the vector.
         this.warpPositionNoPtr(new_origin);  // Then we update the position state to both set the origin and apply it.
     }
@@ -82,8 +94,8 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     getFaceIntersection(target: vec3 = vec3.create()): vec3 {
-        vec3.scale(target, this.direction as vec3, this.distance_traveled);
-        vec3.add(target, this.origin as vec3, target);
+        vec3.scale(target, this._direction as vec3, this.distance_traveled);
+        vec3.add(target, this._origin as vec3, target);
         return target;
     }
 
@@ -109,7 +121,7 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.distance_traveled = closest_dist;
 
         // >> Update pointed voxel
-        this.pointer.getNeighborMut(this.breached_face);
+        this._pointer.getNeighborMut(this.breached_face);
 
         // >> Update next cross distance for axis
         this.dist_at_cross[closest_axis] += this.cross_dist_step[closest_axis];
@@ -122,7 +134,7 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
 
         for (const axis of FaceUtils.getAxes()) {
             const dist_at_cross = this.dist_at_cross[axis] + this.cross_dist_step[axis] * ChunkIndex.getComponentDistToEdge(
-                this.pointer.inner_pos, axis, FaceUtils.signOf(this.direction[axis]));
+                this._pointer.inner_pos, axis, FaceUtils.signOf(this._direction[axis]));
 
             if (dist_at_cross < min_dist_at_cross) {
                 min_dist_at_cross = dist_at_cross;
@@ -139,6 +151,6 @@ export class VoxelRayCast<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.breached_face = this.axis_faces[closest_axis];
 
         // >> Move voxel pointer
-        this.pointer.moveByMut(vec3.scale(VecUtils.work_vec, this.direction as vec3, dist_moved));
+        this._pointer.moveByMut(vec3.scale(VecUtils.work_vec, this._direction as vec3, dist_moved));
     }
 }

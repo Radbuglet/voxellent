@@ -11,3 +11,8 @@ export {VoxelRayCast} from "./data/collision/rayCast";
 
 export {VoxelChunkData} from "./data/misc/chunkData";
 export {ChunkLoader} from "./data/misc/chunkLoader";
+
+export {CraftVoxelMesh, createCraftChunkMesh} from "./meshing/chunkMesher";
+export {ChunkMeshingQueue, UpdatableChunkMesh} from "./meshing/chunkMeshingQueue";
+export {ShaderChunkIndex, CompactFaceEncoder} from "./meshing/compactFaceEncoder";
+export {CoreVertexGeneration, FaceVertexManipulator} from "./meshing/coreVertexGeneration";

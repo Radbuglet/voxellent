@@ -9,10 +9,9 @@
 
     "skipLibCheck": true,  // For gl-matrix
     "declaration": true,
-    "plugins": []  // TODO: Remove @internal
+    "plugins": []
   },
   "files": [
-    "src/index.headless.ts",
-    "src/index.client.ts"
+    "src/index.ts"
   ]
 }

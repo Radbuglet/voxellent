@@ -2,7 +2,7 @@
   "name": "voxel-engine-rewritten",
   "version": "1.0.0",
   "description": "A complete rewrite my voxel-engine project.",
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"

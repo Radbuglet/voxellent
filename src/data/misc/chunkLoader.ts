@@ -117,7 +117,7 @@ export class ChunkLoader {
     private loading_region = new RectIterator();
 
     // Movement methods
-    setRegion(rect: Rect2) {
+    set active_region(rect: Rect2) {
         if (this.done_unloading) {  // All regions are changed if we finished unloading the chunks.
             // >> Swap regions
             // The previous unloading region can be used as the loading region because it is no longer in use.
@@ -140,6 +140,10 @@ export class ChunkLoader {
             // >> Just change the loading region.
             this.loading_region.setArea(rect);
         }
+    }
+
+    get active_region(): Rect2 {
+        return this.loading_region.rect;
     }
 
     // Task querying

@@ -108,7 +108,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
     }
 
     setPosInChunk(chunk: TChunk, index: ChunkIndex) {
-        vec3.copy(this._outer_pos, chunk[VoxelChunk.type].outer_pos);
+        vec3.copy(this._outer_pos, chunk[VoxelChunk.type].outer_pos as vec3);
         this.inner_pos = index;
         this.chunk_cache = chunk;
     }

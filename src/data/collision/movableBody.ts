@@ -2,7 +2,7 @@ import {vec3} from "gl-matrix";
 import {Axis, FaceUtils} from "../../utils/faceUtils";
 import {VoxelChunk} from "../worldStore";
 import {P$} from "ts-providers";
-import {VoxelPointer} from "../pointer";
+import {ReadonlyVoxelPointer, VoxelPointer} from "../pointer";
 
 export class VoxelMovableBody<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
     // >> Work objects
@@ -11,23 +11,31 @@ export class VoxelMovableBody<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TC
     private static trace_ptr = VoxelPointer.empty<any>();
 
     // >> Properties
-    public readonly position = vec3.create();
-    private readonly pointer = VoxelPointer.empty<TChunk>();
+    private readonly _position = vec3.create();
+    private readonly _pointer = VoxelPointer.empty<TChunk>();
 
     // >> Construction
     constructor(position: Readonly<vec3>) {
-        this.warpTo(position);
+        this.position = position;
     }
 
     // >> Warping
-    warpTo(pos: Readonly<vec3>) {
-        vec3.copy(this.position, pos as vec3);
-        this.pointer.setWorldPosRegional(pos);
+    get position(): Readonly<vec3> {
+        return this._position;
+    }
+
+    get pointer(): ReadonlyVoxelPointer<TChunk> {
+        return this._pointer;
+    }
+
+    set position(pos: Readonly<vec3>) {
+        vec3.copy(this._position, pos as vec3);
+        this._pointer.setWorldPosRegional(pos);
     }
 
     warpBy(delta: Readonly<vec3>) {
-        vec3.add(this.position, this.position, delta as vec3);
-        this.pointer.moveByMut(delta);
+        vec3.add(this._position, this._position, delta as vec3);
+        this._pointer.moveByMut(delta);
     }
 
     // >> Movement
@@ -40,7 +48,7 @@ export class VoxelMovableBody<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TC
         const ortho_axes = FaceUtils.getOrthoAxes(axis);
 
         // Find root vector
-        this.pointer.copyTo(a_aligned_ptr);
+        this._pointer.copyTo(a_aligned_ptr);
         if (delta > 0) {  // If the delta is positive, we're operating on the opposite face.
             a_aligned_ptr.getNeighborMut(FaceUtils.fromParts(axis, 1), dimensions[axis]);
         }

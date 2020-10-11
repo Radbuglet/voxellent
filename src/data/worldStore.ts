@@ -12,27 +12,25 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
         console.assert(!this.chunks.has(VecUtils.getVectorKey(pos)));
         console.assert(instance[VoxelChunk.type].status === VoxelChunkStatus.New);
 
-        // Add the root chunk
-        const chunk_pos = instance[VoxelChunk.type].outer_pos;
-        vec3.copy(chunk_pos, pos as vec3);
+        // >> Add the root chunk
+        instance[VoxelChunk.type]._markPosInWorld(pos);
         this.chunks.set(VecUtils.getVectorKey(pos), instance);
 
-        // Flag chunk
-        instance[VoxelChunk.type].status = VoxelChunkStatus.InWorld;
-
-        // Link with neighbors
+        // >> Link with neighbors
+        // We're casting this to a mutable but operations on this won't mutate it.
+        const chunk_pos = instance[VoxelChunk.type].outer_pos as vec3;
         for (const face of FaceUtils.getFaces()) {
-            // Find neighbor position
+            // >> Find neighbor position
             const axis = FaceUtils.getAxis(face);
             const sign = FaceUtils.getSign(face);
             chunk_pos[axis] += sign;
 
-            // Find neighbor and link
+            // >> Find neighbor and link
             const neighbor = this.chunks.get(VecUtils.getVectorKey(pos));
             if (neighbor != null)
                 instance[VoxelChunk.type]._linkToNeighbor(face, instance, neighbor);
 
-            // Revert position vector to original state
+            // >> Revert position vector to original state
             chunk_pos[axis] -= sign;
         }
     }
@@ -47,7 +45,7 @@ export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>
         this.chunks.delete(VecUtils.getVectorKey(pos));
 
         // Mark chunk as no longer in a world.
-        removed_chunk[VoxelChunk.type].status = VoxelChunkStatus.Freed;
+        removed_chunk[VoxelChunk.type]._markFreed();
 
         return true;
     }
@@ -67,11 +65,28 @@ export class VoxelChunk<TNeighbor extends P$<typeof VoxelChunk, VoxelChunk<TNeig
     public static readonly type = Symbol();
 
     // Chunk position properties
-    public status = VoxelChunkStatus.New;
-    public readonly outer_pos: vec3 = vec3.create();
+    private _status = VoxelChunkStatus.New;
+    private readonly _outer_pos = vec3.create();
     private readonly neighbors: (TNeighbor | undefined)[] = new Array(6);
 
+    get outer_pos(): Readonly<vec3> {
+        return this._outer_pos;
+    }
+
+    get status() {
+        return this._status;
+    }
+
     // Neighbor management
+    _markPosInWorld(pos: Readonly<vec3>) {
+        vec3.copy(this._outer_pos, pos as vec3);
+        this._status = VoxelChunkStatus.InWorld;
+    }
+
+    _markFreed() {
+        this._status = VoxelChunkStatus.Freed;
+    }
+
     _linkToNeighbor(face: VoxelFace, self: TNeighbor, other: TNeighbor) {
         this.neighbors[face] = other;
         other[VoxelChunk.type].neighbors[FaceUtils.getInverse(face)] = self;

@@ -1,5 +1,5 @@
-import {ChunkIndex} from "../data/chunkIndex";
-import {Axis, FaceUtils, VoxelFace} from "../utils/faceUtils";
+import {ChunkIndex} from "..";
+import {Axis, FaceUtils, VoxelFace} from "..";
 import {MutableArrayLike} from "../utils/vecUtils";
 
 export interface FaceVertexManipulator<T> {

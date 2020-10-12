@@ -1,6 +1,6 @@
-import {Axis, FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {vec3} from "gl-matrix";
-import {Sign} from "../utils/vecUtils";
+import {Axis, FaceUtils, VoxelFace} from "..";
+import {Sign} from "..";
 
 export type ChunkIndex = number;
 export const ChunkIndex = new class {

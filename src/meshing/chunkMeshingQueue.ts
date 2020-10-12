@@ -1,7 +1,7 @@
-import {VoxelFace, FaceUtils} from "../utils/faceUtils";
+import {VoxelFace, FaceUtils} from "..";
 import {P$} from "ts-providers";
-import {VoxelChunk} from "../data/worldStore";
-import {ChunkIndex} from "../data/chunkIndex";
+import {VoxelChunk} from "..";
+import {ChunkIndex} from "..";
 
 type DirtyChunk<TCtx> = UpdatableChunkMesh<TCtx> & P$<typeof VoxelChunk, VoxelChunk<DirtyChunk<TCtx>>>;
 

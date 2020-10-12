@@ -1,5 +1,5 @@
-import {ChunkIndex} from "../data/chunkIndex";
-import {Axis, VoxelFace} from "../utils/faceUtils";
+import {ChunkIndex} from "..";
+import {Axis, VoxelFace} from "..";
 import {FaceVertexManipulator, CoreVertexGeneration} from "./coreVertexGeneration";
 
 export type ShaderChunkIndex = number;

@@ -1,5 +1,5 @@
 import {vec3} from "gl-matrix";
-import {Axis, FaceUtils} from "../../utils/faceUtils";
+import {Axis, FaceUtils} from "../..";
 import {VoxelChunk} from "../worldStore";
 import {P$} from "ts-providers";
 import {ReadonlyVoxelPointer, VoxelPointer} from "../pointer";

@@ -1,6 +1,6 @@
 import {vec3} from "gl-matrix";
 import {P$} from "ts-providers";
-import {FaceUtils, VoxelFace} from "../utils/faceUtils";
+import {FaceUtils, VoxelFace} from "..";
 import {VectorKey, VecUtils} from "../utils/vecUtils";
 
 export class VoxelWorld<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {

@@ -1,7 +1,7 @@
 {
-  "name": "voxel-engine-rewritten",
+  "name": "voxellent",
   "version": "1.0.0",
-  "description": "A complete rewrite my voxel-engine project.",
+  "description": "An engine-agnostic library for handling cubic voxel worlds",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -9,18 +9,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/radbuglet/voxel-engine-rewritten.git"
+    "url": "git+https://github.com/radbuglet/voxellent.git"
   },
   "keywords": [
     "voxel",
     "game"
   ],
-  "author": "",
+  "author": "radbuglet",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/radbuglet/voxel-engine-rewritten/issues"
+    "url": "https://github.com/radbuglet/voxellent/issues"
   },
-  "homepage": "https://github.com/radbuglet/voxel-engine-rewritten#readme",
+  "homepage": "https://github.com/radbuglet/voxellent#readme",
   "devDependencies": {
     "@types/gl-matrix": "^2.4.5",
     "typescript": "^3.9.6"

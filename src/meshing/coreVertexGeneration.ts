@@ -8,7 +8,7 @@ export interface FaceVertexManipulator<T> {
 }
 
 export const CoreVertexGeneration = new class {
-    writeVertices(buffer: MutableArrayLike<number>, root: number, stride: number, mesh: IterableIterator<number | IterableIterator<number>>) {
+    writeVertices(buffer: MutableArrayLike<number>, root: number, stride: number, mesh: Iterable<number | Iterable<number>>) {
         let write_target = root;
         for (const vertex of mesh) {
             console.assert(write_target - root % stride === 0);

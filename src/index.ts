@@ -1,4 +1,4 @@
-export {Rect2, UlRect2} from "./utils/rect2";
+export {Rect2, MutableRect2} from "./utils/rect2";
 export {Sign} from "./utils/vecUtils";
 export {Axis, VoxelFace, FaceUtils} from "./utils/faceUtils";
 

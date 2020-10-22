@@ -1,20 +1,20 @@
 import {vec2} from "gl-matrix";
 
 // This "gl-matrix"-like design is done to support third-party rect classes as most other implementations expose these properties.
-export type UlRect2 = {
+export type MutableRect2 = {
     x: number;
     y: number;
     w: number;
     h: number;
 };
-export type Rect2 = Readonly<UlRect2>;
+export type Rect2 = Readonly<MutableRect2>;
 
 export const Rect2 = new class {
-    create(x: number = 0, y: number = 0, w: number = 0, h: number = 0): UlRect2 {
+    create(x: number = 0, y: number = 0, w: number = 0, h: number = 0): MutableRect2 {
         return { x, y, w, h };
     }
 
-    copy(target: UlRect2, from: Rect2) {
+    copy(target: MutableRect2, from: Rect2) {
         target.x = from.x;
         target.y = from.y;
         target.w = from.w;

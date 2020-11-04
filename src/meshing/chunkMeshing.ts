@@ -1,9 +1,9 @@
-import {VoxelChunk} from "..";
+import {VoxelChunk} from "../data/worldStore";
 import {P$} from "ts-providers";
-import {ChunkIndex} from "..";
-import {FaceUtils, VoxelFace} from "..";
-import {Rect2} from "..";
-import {VoxelPointer} from "..";
+import {ChunkIndex} from "../data/chunkIndex";
+import {FaceUtils, VoxelFace} from "../utils/faceUtils";
+import {Rect2} from "../utils/rect2";
+import {VoxelPointer} from "../data/pointer";
 
 export type VoxelMeshDescriptor<TCtx, TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> = {
     [_ in VoxelFace]: null | { rect: Rect2, generateMesh: (ctx: TCtx, location: VoxelPointer<TChunk>, face: VoxelFace) => void }

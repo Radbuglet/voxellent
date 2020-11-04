@@ -1,5 +1,5 @@
 import {vec2} from "gl-matrix";
-import {Rect2} from "../..";
+import {Rect2} from "../../utils/rect2";
 
 export class RectIterator {
     public readonly rect = Rect2.create();

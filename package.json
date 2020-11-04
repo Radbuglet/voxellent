@@ -1,9 +1,21 @@
 {
   "name": "voxellent",
-  "version": "1.0.0",
+  "version": "0.1.0-dev",
   "description": "An engine-agnostic library for handling cubic voxel worlds",
   "main": "dist/index.js",
+  "exports": {
+    ".": "dist/index.js",
+    "./data/*": "dist/data/*.js",
+    "./meshing/*": "dist/meshing/*.js",
+    "./utils/rect2.js": "dist/utils/rect2.js",
+    "./utils/vecUtils.js": "dist/utils/vecUtils.js",
+    "./utils/faceUtils.js": "dist/utils/faceUtils.js"
+  },
+  "type": "module",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"

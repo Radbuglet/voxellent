@@ -1,7 +1,7 @@
 import {P$} from "ts-providers";
 import {vec3} from "gl-matrix";
 import {ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
-import {FaceUtils, VoxelFace} from "..";
+import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VoxelChunk, VoxelChunkStatus, VoxelWorld} from "./worldStore";
 import {VecUtils} from "../utils/vecUtils";
 

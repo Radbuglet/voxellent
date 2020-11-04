@@ -1,6 +1,7 @@
-import {ChunkIndex} from "..";
-import {Axis, FaceUtils, VoxelFace} from "..";
+import {ChunkIndex} from "../data/chunkIndex";
 import {MutableArrayLike} from "../utils/vecUtils";
+import {Axis, FaceUtils, VoxelFace} from "../utils/faceUtils";
+import {ShaderChunkIndex} from "./compactFaceEncoder";
 
 export interface FaceVertexManipulator<T> {
     fromChunkIndex(index: ChunkIndex): T;
@@ -69,5 +70,9 @@ export const CoreVertexGeneration = new class {
         yield root_index;
         yield vertex_diag;
         yield flip_ab_vertices ? vertex_b : vertex_a;
+    }
+
+    generateFaceCompact(voxel: ChunkIndex, face: VoxelFace, ccw_culling: boolean = true) {
+        return CoreVertexGeneration.generateFaceGeneric<ShaderChunkIndex>(voxel, face, ShaderChunkIndex, ccw_culling);
     }
 }();

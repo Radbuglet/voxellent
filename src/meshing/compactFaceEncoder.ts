@@ -1,12 +1,18 @@
-import {ChunkIndex} from "..";
-import {Axis, VoxelFace} from "..";
-import {FaceVertexManipulator, CoreVertexGeneration} from "./coreVertexGeneration";
+import {ChunkIndex} from "../data/chunkIndex";
+import {Axis} from "../utils/faceUtils";
+import {FaceVertexManipulator} from "./coreVertexGeneration";
 
 export type ShaderChunkIndex = number;
 export const ShaderChunkIndex = new class implements FaceVertexManipulator<ShaderChunkIndex> {
     public readonly index_flag_bit_count = 3;
     public readonly index_flag_bit_mask = (2 ** this.index_flag_bit_count) - 1;
+    public readonly vap_config = {
+        size: 2,
+        type: WebGLRenderingContext.UNSIGNED_SHORT,
+        normalized: false
+    } as const;
 
+    // Encoding
     fromChunkIndex(index: ChunkIndex): ShaderChunkIndex {
         return index << this.index_flag_bit_count;
     }
@@ -25,18 +31,8 @@ export const ShaderChunkIndex = new class implements FaceVertexManipulator<Shade
         return this.fromChunkIndex(new_chunk_index) + this.getFlagBits(index)
             + (ChunkIndex.register_traversed_chunks !== 0 ? (1 << axis) : 0);  // Add bit flag for traversal.
     }
-}();
 
-export const CompactFaceEncoder = new class {
-    // Config properties
-    public static readonly words_per_face = 6;
-    public static readonly vap_config = {
-        size: 2,
-        type: WebGLRenderingContext.UNSIGNED_SHORT,
-        normalized: false
-    } as const;
-
-    // Shader generation methods
+    // Decoding
     genShaderParseFunc(name: string) {
         const { chunk_edge_length: edge_length } = ChunkIndex;
         return `
@@ -57,9 +53,5 @@ vec3 ${name}(int vertex) {
 
     return accumulator;
 }\n`;
-    }
-
-    generateFace(voxel: ChunkIndex, face: VoxelFace, ccw_culling: boolean = true) {
-        return CoreVertexGeneration.generateFaceGeneric<ShaderChunkIndex>(voxel, face, ShaderChunkIndex, ccw_culling);
     }
 }();

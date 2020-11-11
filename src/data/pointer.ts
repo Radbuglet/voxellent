@@ -1,8 +1,7 @@
-import {P$} from "ts-providers";
 import {vec3} from "gl-matrix";
 import {ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
-import {VoxelChunk, VoxelChunkStatus, VoxelWorld} from "./worldStore";
+import {LinkableChunk, VoxelChunkStatus, ChunkContainer} from "./worldStore";
 import {VecUtils} from "../utils/vecUtils";
 
 const default_max_chunk_traversal = 32;
@@ -11,7 +10,7 @@ export interface ReadonlyVoxelPointer<TUserChunk> {
     readonly outer_pos: Readonly<vec3>;
     readonly inner_pos: ChunkIndex;
     hasChunkCache(): boolean;
-    getChunk(world: VoxelWorld<TUserChunk>): VoxelChunk<TUserChunk> | undefined;
+    getChunk(world: ChunkContainer<TUserChunk>): LinkableChunk<TUserChunk> | undefined;
     getWorldPos(target?: vec3): vec3;
     getChunkPos(): Readonly<vec3>;
     moveByChunkCopy(chunk_delta: Readonly<vec3>, max_cache_traversal?: number): VoxelPointer<TUserChunk>;
@@ -23,7 +22,7 @@ export interface ReadonlyVoxelPointer<TUserChunk> {
 
 export class VoxelPointer<TUserChunk> implements ReadonlyVoxelPointer<TUserChunk> {
     // Properties
-    private constructor(private readonly _outer_pos = vec3.create(), public inner_pos: ChunkIndex = 0, private chunk_cache?: VoxelChunk<TUserChunk>) {}
+    private constructor(private readonly _outer_pos = vec3.create(), public inner_pos: ChunkIndex = 0, private chunk_cache?: LinkableChunk<TUserChunk>) {}
 
     static empty<TUserChunk>() {
         return new VoxelPointer<TUserChunk>();
@@ -39,14 +38,14 @@ export class VoxelPointer<TUserChunk> implements ReadonlyVoxelPointer<TUserChunk
         return instance;
     }
 
-    static fromPosAttached<TUserChunk>(world: VoxelWorld<TUserChunk>, pos: Readonly<vec3>) {
+    static fromPosAttached<TUserChunk>(world: ChunkContainer<TUserChunk>, pos: Readonly<vec3>) {
         const instance = new VoxelPointer<TUserChunk>();
         instance.setWorldPos(pos);
         instance.forceRefreshChunkCache(world);  // We know that the chunk cache won't be valid.
         return instance;
     }
 
-    static fromChunk<TUserChunk>(chunk: VoxelChunk<TUserChunk>, index: ChunkIndex) {
+    static fromChunk<TUserChunk>(chunk: LinkableChunk<TUserChunk>, index: ChunkIndex) {
         const instance = new VoxelPointer<TUserChunk>();
         instance.setPosInChunk(chunk, index);
         return instance;
@@ -61,16 +60,16 @@ export class VoxelPointer<TUserChunk> implements ReadonlyVoxelPointer<TUserChunk
         this.chunk_cache = undefined;
     }
 
-    forceRefreshChunkCache(world: VoxelWorld<TUserChunk>): boolean {
+    forceRefreshChunkCache(world: ChunkContainer<TUserChunk>): boolean {
         this.chunk_cache = world.getChunk(this._outer_pos);
         return this.chunk_cache != null;
     }
 
-    refreshChunkCache(world: VoxelWorld<TUserChunk>): boolean {
+    refreshChunkCache(world: ChunkContainer<TUserChunk>): boolean {
         return this.hasChunkCache() || this.forceRefreshChunkCache(world);
     }
 
-    getChunk(world: VoxelWorld<TUserChunk>): VoxelChunk<TUserChunk> | undefined {
+    getChunk(world: ChunkContainer<TUserChunk>): LinkableChunk<TUserChunk> | undefined {
         this.refreshChunkCache(world);
         return this.chunk_cache;
     }
@@ -107,7 +106,7 @@ export class VoxelPointer<TUserChunk> implements ReadonlyVoxelPointer<TUserChunk
         this.moveByMut(delta, max_cache_traversal);
     }
 
-    setPosInChunk(chunk: VoxelChunk<TUserChunk>, index: ChunkIndex) {
+    setPosInChunk(chunk: LinkableChunk<TUserChunk>, index: ChunkIndex) {
         vec3.copy(this._outer_pos, chunk.outer_pos as vec3);
         this.inner_pos = index;
         this.chunk_cache = chunk;

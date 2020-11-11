@@ -8,12 +8,12 @@ Voxellent provides data structures for creating and interacting with infinitely 
 
 Data submodule:
 
-- `VoxelWorld` and `VoxelChunk`: a data structure for storing an infinitely large grid of chunks.
+- `ChunkContainer` and `LinkableChunk`: a data structure for storing an infinitely large grid of chunks.
 - `VoxelPointer`: an object allowing efficient traversal of the chunk grid.
 - `VoxelRayCast`: an object allowing efficient and customizable ray tracing of the voxel world.
 - `VoxelMovableBody`: an object allowing reliable and efficient AABB collision checking against the voxel world.
 - `ChunkLoader`: an object providing efficient rectangular chunk visibility updates.
-- `VoxelChunkData`: a data structure for efficiently storing voxel materials in a chunk.
+- `ChunkDataStore`: a data structure for efficiently storing voxel materials in a chunk.
 
 Meshing submodule:
 

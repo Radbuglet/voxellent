@@ -2,10 +2,10 @@ import {vec3} from "gl-matrix";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VectorKey, VecUtils} from "../utils/vecUtils";
 
-export class VoxelWorld<T> {
-    private readonly chunks = new Map<VectorKey, VoxelChunk<T>>();
+export class ChunkContainer<T> {
+    private readonly chunks = new Map<VectorKey, LinkableChunk<T>>();
 
-    addChunk(pos: Readonly<vec3>, instance: VoxelChunk<T>) {
+    addChunk(pos: Readonly<vec3>, instance: LinkableChunk<T>) {
         console.assert(VecUtils.isIntVec(pos as vec3));
         console.assert(!this.chunks.has(VecUtils.getVectorKey(pos)));
         console.assert(instance.status === VoxelChunkStatus.New);
@@ -59,11 +59,11 @@ export enum VoxelChunkStatus {
     Freed
 }
 
-export class VoxelChunk<T> {
+export class LinkableChunk<T> {
     // Chunk position properties
     private _status = VoxelChunkStatus.New;
     private readonly _outer_pos = vec3.create();
-    private readonly neighbors: (VoxelChunk<T> | undefined)[] = new Array(6);
+    private readonly neighbors: (LinkableChunk<T> | undefined)[] = new Array(6);
 
     get outer_pos(): Readonly<vec3> {
         return this._outer_pos;
@@ -86,7 +86,7 @@ export class VoxelChunk<T> {
         this._status = VoxelChunkStatus.Freed;
     }
 
-    _linkToNeighbor(face: VoxelFace, other: VoxelChunk<T>) {
+    _linkToNeighbor(face: VoxelFace, other: LinkableChunk<T>) {
         this.neighbors[face] = other;
         other.neighbors[FaceUtils.getInverse(face)] = this;
     }

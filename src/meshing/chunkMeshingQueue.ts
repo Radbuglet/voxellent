@@ -1,8 +1,8 @@
 import {VoxelFace, FaceUtils} from "../utils/faceUtils";
-import {VoxelChunk} from "../data/worldStore";
+import {LinkableChunk} from "../data/worldStore";
 import {ChunkIndex} from "../data/chunkIndex";
 
-type DirtyChunk<TCtx> = VoxelChunk<UpdatableChunkMesh<TCtx>>;
+type DirtyChunk<TCtx> = LinkableChunk<UpdatableChunkMesh<TCtx>>;
 
 export interface UpdatableChunkMesh<TCtx> {
     updateChunk(ctx: TCtx): void;

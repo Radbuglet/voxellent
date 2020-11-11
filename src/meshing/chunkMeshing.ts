@@ -2,7 +2,7 @@ import {ChunkIndex} from "../data/chunkIndex";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {Rect2} from "../utils/rect2";
 import {VoxelPointer} from "../data/pointer";
-import {VoxelChunk} from "../data/worldStore";
+import {LinkableChunk} from "../data/worldStore";
 
 export type VoxelMeshDescriptor<TCtx, TUserChunk> = {
     [_ in VoxelFace]: null | { rect: Rect2, generateMesh: (ctx: TCtx, location: VoxelPointer<TUserChunk>, face: VoxelFace) => void }
@@ -12,7 +12,7 @@ export type VoxelMeshDescriptor<TCtx, TUserChunk> = {
 
 export const ChunkMeshing = new class {
     generateMesh<TCtx, TUserChunk>(
-        ctx: TCtx, chunk: VoxelChunk<TUserChunk>, decodeVoxel: (pointer: VoxelPointer<TUserChunk>) => VoxelMeshDescriptor<TCtx, TUserChunk> | null) {
+        ctx: TCtx, chunk: LinkableChunk<TUserChunk>, decodeVoxel: (pointer: VoxelPointer<TUserChunk>) => VoxelMeshDescriptor<TCtx, TUserChunk> | null) {
         const pointer_target = VoxelPointer.empty<TUserChunk>();
 
         for (const index of ChunkIndex.iterateAllIndices()) {

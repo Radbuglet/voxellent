@@ -39,7 +39,6 @@
     "typescript": "^3.9.6"
   },
   "dependencies": {
-    "ts-providers": "^0.2.1",
     "gl-matrix": "^3.3.0"
   }
 }

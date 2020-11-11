@@ -7,76 +7,76 @@ import {VecUtils} from "../utils/vecUtils";
 
 const default_max_chunk_traversal = 32;
 
-export interface ReadonlyVoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> {
+export interface ReadonlyVoxelPointer<TUserChunk> {
     readonly outer_pos: Readonly<vec3>;
     readonly inner_pos: ChunkIndex;
     hasChunkCache(): boolean;
-    getChunk(world: VoxelWorld<TChunk>): TChunk | undefined;
+    getChunk(world: VoxelWorld<TUserChunk>): VoxelChunk<TUserChunk> | undefined;
     getWorldPos(target?: vec3): vec3;
     getChunkPos(): Readonly<vec3>;
-    moveByChunkCopy(chunk_delta: Readonly<vec3>, max_cache_traversal?: number): VoxelPointer<TChunk>;
-    getNeighborCopy(face: VoxelFace, magnitude?: number, max_cache_traversal?: number): VoxelPointer<TChunk>;
-    moveByCopy(delta: Readonly<vec3>, max_cache_traversal?: number): VoxelPointer<TChunk>;
-    clone(): VoxelPointer<TChunk>;
-    copyTo(target: VoxelPointer<TChunk>): void;
+    moveByChunkCopy(chunk_delta: Readonly<vec3>, max_cache_traversal?: number): VoxelPointer<TUserChunk>;
+    getNeighborCopy(face: VoxelFace, magnitude?: number, max_cache_traversal?: number): VoxelPointer<TUserChunk>;
+    moveByCopy(delta: Readonly<vec3>, max_cache_traversal?: number): VoxelPointer<TUserChunk>;
+    clone(): VoxelPointer<TUserChunk>;
+    copyTo(target: VoxelPointer<TUserChunk>): void;
 }
 
-export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> implements ReadonlyVoxelPointer<TChunk> {
+export class VoxelPointer<TUserChunk> implements ReadonlyVoxelPointer<TUserChunk> {
     // Properties
-    constructor(private readonly _outer_pos = vec3.create(), public inner_pos: ChunkIndex = 0, private chunk_cache?: TChunk) {}
+    private constructor(private readonly _outer_pos = vec3.create(), public inner_pos: ChunkIndex = 0, private chunk_cache?: VoxelChunk<TUserChunk>) {}
 
-    static empty<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>() {
-        return new VoxelPointer<TChunk>();
+    static empty<TUserChunk>() {
+        return new VoxelPointer<TUserChunk>();
     }
 
-    static fromPair<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(outer_pos: Readonly<vec3>, inner_pos: ChunkIndex) {
-        return new VoxelPointer(vec3.clone(outer_pos as vec3), inner_pos);
+    static fromPair<TUserChunk>(outer_pos: Readonly<vec3>, inner_pos: ChunkIndex) {
+        return new VoxelPointer<TUserChunk>(vec3.clone(outer_pos as vec3), inner_pos);
     }
 
-    static fromPos<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(pos: Readonly<vec3>) {
-        const instance = new VoxelPointer<TChunk>();
+    static fromPos<TUserChunk>(pos: Readonly<vec3>) {
+        const instance = new VoxelPointer<TUserChunk>();
         instance.setWorldPos(pos);
         return instance;
     }
 
-    static fromPosAttached<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(world: VoxelWorld<TChunk>, pos: Readonly<vec3>) {
-        const instance = new VoxelPointer<TChunk>();
+    static fromPosAttached<TUserChunk>(world: VoxelWorld<TUserChunk>, pos: Readonly<vec3>) {
+        const instance = new VoxelPointer<TUserChunk>();
         instance.setWorldPos(pos);
         instance.forceRefreshChunkCache(world);  // We know that the chunk cache won't be valid.
         return instance;
     }
 
-    static fromChunkPos<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(chunk: TChunk, index: ChunkIndex) {
-        const instance = new VoxelPointer<TChunk>();
+    static fromChunk<TUserChunk>(chunk: VoxelChunk<TUserChunk>, index: ChunkIndex) {
+        const instance = new VoxelPointer<TUserChunk>();
         instance.setPosInChunk(chunk, index);
         return instance;
     }
 
     // Chunk reference management
     hasChunkCache() {
-        return this.chunk_cache != null && this.chunk_cache[VoxelChunk.type].status === VoxelChunkStatus.InWorld;
+        return this.chunk_cache != null && this.chunk_cache.status === VoxelChunkStatus.InWorld;
     }
 
     clearChunkCache() {
         this.chunk_cache = undefined;
     }
 
-    forceRefreshChunkCache(world: VoxelWorld<TChunk>): boolean {
+    forceRefreshChunkCache(world: VoxelWorld<TUserChunk>): boolean {
         this.chunk_cache = world.getChunk(this._outer_pos);
         return this.chunk_cache != null;
     }
 
-    refreshChunkCache(world: VoxelWorld<TChunk>): boolean {
+    refreshChunkCache(world: VoxelWorld<TUserChunk>): boolean {
         return this.hasChunkCache() || this.forceRefreshChunkCache(world);
     }
 
-    getChunk(world: VoxelWorld<TChunk>): TChunk | undefined {
+    getChunk(world: VoxelWorld<TUserChunk>): VoxelChunk<TUserChunk> | undefined {
         this.refreshChunkCache(world);
         return this.chunk_cache;
     }
 
     private ensureValidChunkCache() {
-        if (this.chunk_cache != null && this.chunk_cache[VoxelChunk.type].status !== VoxelChunkStatus.InWorld) {
+        if (this.chunk_cache != null && this.chunk_cache.status !== VoxelChunkStatus.InWorld) {
             this.chunk_cache = undefined;
         }
     }
@@ -102,13 +102,13 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
         this.moveByMut(VecUtils.work_vec, max_cache_traversal);
     }
 
-    setPosRelativeTo(pointer: VoxelPointer<TChunk>, delta: Readonly<vec3>, max_cache_traversal?: number) {
+    setPosRelativeTo(pointer: VoxelPointer<TUserChunk>, delta: Readonly<vec3>, max_cache_traversal?: number) {
         pointer.copyTo(this);
         this.moveByMut(delta, max_cache_traversal);
     }
 
-    setPosInChunk(chunk: TChunk, index: ChunkIndex) {
-        vec3.copy(this._outer_pos, chunk[VoxelChunk.type].outer_pos as vec3);
+    setPosInChunk(chunk: VoxelChunk<TUserChunk>, index: ChunkIndex) {
+        vec3.copy(this._outer_pos, chunk.outer_pos as vec3);
         this.inner_pos = index;
         this.chunk_cache = chunk;
     }
@@ -148,7 +148,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
                     return this;
                 }
 
-                this.chunk_cache = this.chunk_cache[VoxelChunk.type].getNeighbor(traversal_face);
+                this.chunk_cache = this.chunk_cache.getNeighbor(traversal_face);
             }
         }
         return this;
@@ -177,7 +177,7 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
                     this.chunk_cache = undefined;
                     break;
                 }
-                this.chunk_cache = this.chunk_cache[VoxelChunk.type].getNeighbor(face);
+                this.chunk_cache = this.chunk_cache.getNeighbor(face);
             }
         }
 
@@ -204,10 +204,10 @@ export class VoxelPointer<TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk
 
     // Memory management
     clone() {
-        return new VoxelPointer<TChunk>(vec3.clone(this._outer_pos), this.inner_pos, this.chunk_cache);
+        return new VoxelPointer<TUserChunk>(vec3.clone(this._outer_pos), this.inner_pos, this.chunk_cache);
     }
 
-    copyTo(target: VoxelPointer<TChunk>) {
+    copyTo(target: VoxelPointer<TUserChunk>) {
         vec3.copy(target._outer_pos, this._outer_pos);
         target.inner_pos = this.inner_pos;
         target.chunk_cache = this.chunk_cache;

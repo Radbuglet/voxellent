@@ -1,20 +1,19 @@
-import {VoxelChunk} from "../data/worldStore";
-import {P$} from "ts-providers";
 import {ChunkIndex} from "../data/chunkIndex";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {Rect2} from "../utils/rect2";
 import {VoxelPointer} from "../data/pointer";
+import {VoxelChunk} from "../data/worldStore";
 
-export type VoxelMeshDescriptor<TCtx, TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>> = {
-    [_ in VoxelFace]: null | { rect: Rect2, generateMesh: (ctx: TCtx, location: VoxelPointer<TChunk>, face: VoxelFace) => void }
+export type VoxelMeshDescriptor<TCtx, TUserChunk> = {
+    [_ in VoxelFace]: null | { rect: Rect2, generateMesh: (ctx: TCtx, location: VoxelPointer<TUserChunk>, face: VoxelFace) => void }
 } & {
-    generateInstance?: (ctx: TCtx, location: VoxelPointer<TChunk>) => void
+    generateInstance?: (ctx: TCtx, location: VoxelPointer<TUserChunk>) => void
 };
 
 export const ChunkMeshing = new class {
-    generateMesh<TCtx, TChunk extends P$<typeof VoxelChunk, VoxelChunk<TChunk>>>(
-        ctx: TCtx, chunk: TChunk, decodeVoxel: (pointer: VoxelPointer<TChunk>) => VoxelMeshDescriptor<TCtx, TChunk> | null) {
-        const pointer_target = VoxelPointer.empty<TChunk>();
+    generateMesh<TCtx, TUserChunk>(
+        ctx: TCtx, chunk: VoxelChunk<TUserChunk>, decodeVoxel: (pointer: VoxelPointer<TUserChunk>) => VoxelMeshDescriptor<TCtx, TUserChunk> | null) {
+        const pointer_target = VoxelPointer.empty<TUserChunk>();
 
         for (const index of ChunkIndex.iterateAllIndices()) {
             // Parse voxel

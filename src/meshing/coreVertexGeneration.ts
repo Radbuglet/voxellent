@@ -8,26 +8,23 @@ export interface FaceVertexManipulator<T> {
     addPositive(index: T, axis: Axis, magnitude: number): T;
 }
 
-export const CoreVertexGeneration = new class {
-    writeVertices(buffer: MutableArrayLike<number>, root: number, stride: number, mesh: Iterable<number | Iterable<number>>) {
-        let write_target = root;
-        for (const vertex of mesh) {
-            console.assert(write_target - root % stride === 0);
+export class WriteableVertexBuffer<T> {
+    constructor(public target: MutableArrayLike<T>, public root_index: number = 0, public size: number = 0) {}
 
-            // Write data
-            if (typeof vertex === "number") {
-                buffer[write_target] = vertex;
-            } else {
-                for (const data of vertex) {
-                    buffer[write_target++] = data;
-                }
-            }
-
-            // Move offset
-            write_target += stride;
+    writePart(values: Iterable<T>, offset: number) {
+        let index = this.root_index + offset;
+        for (const value of values) {
+            console.assert(index < this.root_index + this.size);
+            this.target[index++] = value;
         }
     }
 
+    nextElement() {
+        this.root_index += this.size;
+    }
+}
+
+export const CoreVertexGeneration = new class {
     *generateQuadGeneric<T>(a: T, b: T, c: T, d: T, ccw_culling: boolean = true): IterableIterator<T> {
         // Triangle 1
         yield a;

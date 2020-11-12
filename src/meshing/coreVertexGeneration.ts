@@ -9,7 +9,7 @@ export interface FaceVertexManipulator<T> {
 }
 
 export class WriteableVertexBuffer<T> {
-    constructor(public target: MutableArrayLike<T>, public root_index: number = 0, public size: number = 0) {}
+    constructor(public target: MutableArrayLike<T>, public size: number, public root_index: number = 0) {}
 
     writePart(values: Iterable<T>, offset: number) {
         let index = this.root_index + offset;

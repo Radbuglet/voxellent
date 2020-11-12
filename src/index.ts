@@ -15,4 +15,4 @@ export {ChunkLoader} from "./data/misc/chunkLoader";
 export {VoxelMeshDescriptor, ChunkMeshing} from "./meshing/chunkMeshing";
 export {ChunkMeshingQueue, UpdatableChunkMesh} from "./meshing/chunkMeshingQueue";
 export {ShaderChunkIndex} from "./meshing/compactFaceEncoder";
-export {CoreVertexGeneration, FaceVertexManipulator} from "./meshing/coreVertexGeneration";
+export {CoreVertexGeneration, WriteableVertexBuffer, FaceVertexManipulator} from "./meshing/coreVertexGeneration";

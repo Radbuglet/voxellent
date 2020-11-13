@@ -2,6 +2,8 @@ import {BufferUtils, PrimitiveByteCount} from "../../utils/bufferUtils";
 import {ChunkIndex} from "../chunkIndex";
 
 export class ChunkDataStore {
+    public static readonly type = Symbol();
+
     // Chunk data properties
     private data?: DataView;
     private bytes_per_voxel!: number;

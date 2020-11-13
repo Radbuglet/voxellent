@@ -1,8 +1,9 @@
 import {VoxelFace, FaceUtils} from "../utils/faceUtils";
 import {LinkableChunk} from "../data/worldStore";
 import {ChunkIndex} from "../data/chunkIndex";
+import {P$} from "ts-providers";
 
-type DirtyChunk<TCtx> = LinkableChunk<UpdatableChunkMesh<TCtx>>;
+type DirtyChunk<TCtx> = P$<typeof LinkableChunk, LinkableChunk<DirtyChunk<TCtx>>> & UpdatableChunkMesh<TCtx>;
 
 export interface UpdatableChunkMesh<TCtx> {
     updateChunk(ctx: TCtx): void;
@@ -16,9 +17,9 @@ export class ChunkMeshingQueue<TCtx> {
     }
 
     flagChunkNeighbor(chunk: DirtyChunk<TCtx>, face: VoxelFace) {
-        const neighbor = chunk.getNeighbor(face);
+        const neighbor = chunk[LinkableChunk.type].getNeighbor(face);
         if (neighbor != null)
-            this.flagChunk(neighbor.user_data);
+            this.flagChunk(neighbor);
     }
 
     flagVoxelFace(chunk: DirtyChunk<TCtx>, index: ChunkIndex, face: VoxelFace) {
@@ -29,7 +30,7 @@ export class ChunkMeshingQueue<TCtx> {
         if (ChunkIndex.register_traversed_chunks > 1) {
             this.flagChunkNeighbor(chunk, face);
         } else {
-            this.flagChunk(chunk.user_data);
+            this.flagChunk(chunk);
         }
     }
 
@@ -40,7 +41,7 @@ export class ChunkMeshingQueue<TCtx> {
             if (face != null) {
                 this.flagChunkNeighbor(chunk, face);
             } else if (!flagged_self) {
-                this.flagChunk(chunk.user_data);
+                this.flagChunk(chunk);
                 flagged_self = true;
             }
         }

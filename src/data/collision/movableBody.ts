@@ -1,8 +1,10 @@
 import {vec3} from "gl-matrix";
 import {Axis, FaceUtils} from "../../utils/faceUtils";
+import {LinkableChunk} from "../worldStore";
+import {P$} from "ts-providers";
 import {ReadonlyVoxelPointer, VoxelPointer} from "../pointer";
 
-export class VoxelMovableBody<TUserChunk> {
+export class VoxelMovableBody<TChunk extends P$<typeof LinkableChunk, LinkableChunk<TChunk>>> {
     // >> Work objects
     private static a_aligned_ptr = VoxelPointer.empty<any>();
     private static b_aligned_ptr = VoxelPointer.empty<any>();
@@ -10,7 +12,7 @@ export class VoxelMovableBody<TUserChunk> {
 
     // >> Properties
     private readonly _position = vec3.create();
-    private readonly _pointer = VoxelPointer.empty<TUserChunk>();
+    private readonly _pointer = VoxelPointer.empty<TChunk>();
 
     // >> Construction
     constructor(position: Readonly<vec3>) {
@@ -22,7 +24,7 @@ export class VoxelMovableBody<TUserChunk> {
         return this._position;
     }
 
-    get pointer(): ReadonlyVoxelPointer<TUserChunk> {
+    get pointer(): ReadonlyVoxelPointer<TChunk> {
         return this._pointer;
     }
 
@@ -37,7 +39,7 @@ export class VoxelMovableBody<TUserChunk> {
     }
 
     // >> Movement
-    moveOn(dimensions: Readonly<vec3>, has_collided: (voxel: VoxelPointer<TUserChunk>) => boolean, axis: Axis, delta: number): number {
+    moveOn(dimensions: Readonly<vec3>, has_collided: (voxel: VoxelPointer<TChunk>) => boolean, axis: Axis, delta: number): number {
         // If there is no movement, don't do anything.
         if (delta == 0) return 0;
 
@@ -86,7 +88,7 @@ export class VoxelMovableBody<TUserChunk> {
         return max_distance;
     }
 
-    moveBy(dimensions: Readonly<vec3>, has_collided: (voxel: VoxelPointer<TUserChunk>) => boolean, delta: Readonly<vec3>) {
+    moveBy(dimensions: Readonly<vec3>, has_collided: (voxel: VoxelPointer<TChunk>) => boolean, delta: Readonly<vec3>) {
         for (const axis of FaceUtils.getAxes()) {
             this.moveOn(dimensions, has_collided, axis, delta[axis]);
         }

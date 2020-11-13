@@ -1,22 +1,24 @@
 import {vec3} from "gl-matrix";
+import {P$} from "ts-providers";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VectorKey, VecUtils} from "../utils/vecUtils";
 
-export class ChunkContainer<T> {
-    private readonly chunks = new Map<VectorKey, LinkableChunk<T>>();
+export class ChunkContainer<TChunk extends P$<typeof LinkableChunk, LinkableChunk<TChunk>>> {
+    public static readonly type = Symbol();
+    private readonly chunks = new Map<VectorKey, TChunk>();
 
-    addChunk(pos: Readonly<vec3>, instance: LinkableChunk<T>) {
+    addChunk(pos: Readonly<vec3>, instance: TChunk) {
         console.assert(VecUtils.isIntVec(pos as vec3));
         console.assert(!this.chunks.has(VecUtils.getVectorKey(pos)));
-        console.assert(instance.status === VoxelChunkStatus.New);
+        console.assert(instance[LinkableChunk.type].status === VoxelChunkStatus.New);
 
         // >> Add the root chunk
-        instance._markPosInWorld(pos);
+        instance[LinkableChunk.type]._markPosInWorld(pos);
         this.chunks.set(VecUtils.getVectorKey(pos), instance);
 
         // >> Link with neighbors
         // We're casting this to a mutable but operations on this won't mutate it.
-        const chunk_pos = instance.outer_pos as vec3;
+        const chunk_pos = instance[LinkableChunk.type].outer_pos as vec3;
         for (const face of FaceUtils.getFaces()) {
             // >> Find neighbor position
             const axis = FaceUtils.getAxis(face);
@@ -26,7 +28,7 @@ export class ChunkContainer<T> {
             // >> Find neighbor and link
             const neighbor = this.chunks.get(VecUtils.getVectorKey(pos));
             if (neighbor != null)
-                instance._linkToNeighbor(face, neighbor);
+                instance[LinkableChunk.type]._linkToNeighbor(face, instance, neighbor);
 
             // >> Revert position vector to original state
             chunk_pos[axis] -= sign;
@@ -39,11 +41,11 @@ export class ChunkContainer<T> {
         if (removed_chunk == null) return false;
 
         // Unlink it!
-        removed_chunk._unlinkNeighbors();
+        removed_chunk[LinkableChunk.type]._unlinkNeighbors();
         this.chunks.delete(VecUtils.getVectorKey(pos));
 
         // Mark chunk as no longer in a world.
-        removed_chunk._markFreed();
+        removed_chunk[LinkableChunk.type]._markFreed();
 
         return true;
     }
@@ -59,11 +61,13 @@ export enum VoxelChunkStatus {
     Freed
 }
 
-export class LinkableChunk<T> {
+export class LinkableChunk<TNeighbor extends P$<typeof LinkableChunk, LinkableChunk<TNeighbor>>> {
+    public static readonly type = Symbol();
+
     // Chunk position properties
     private _status = VoxelChunkStatus.New;
     private readonly _outer_pos = vec3.create();
-    private readonly neighbors: (LinkableChunk<T> | undefined)[] = new Array(6);
+    private readonly neighbors: (TNeighbor | undefined)[] = new Array(6);
 
     get outer_pos(): Readonly<vec3> {
         return this._outer_pos;
@@ -72,9 +76,6 @@ export class LinkableChunk<T> {
     get status() {
         return this._status;
     }
-
-    // Constructor
-    constructor(public user_data: T) {}
 
     // Neighbor management
     _markPosInWorld(pos: Readonly<vec3>) {
@@ -86,16 +87,16 @@ export class LinkableChunk<T> {
         this._status = VoxelChunkStatus.Freed;
     }
 
-    _linkToNeighbor(face: VoxelFace, other: LinkableChunk<T>) {
+    _linkToNeighbor(face: VoxelFace, self: TNeighbor, other: TNeighbor) {
         this.neighbors[face] = other;
-        other.neighbors[FaceUtils.getInverse(face)] = this;
+        other[LinkableChunk.type].neighbors[FaceUtils.getInverse(face)] = self;
     }
 
     _unlinkNeighbors() {
         for (const face of FaceUtils.getFaces()) {
             const neighbor = this.neighbors[face];
             if (neighbor != null) {
-                neighbor.neighbors[FaceUtils.getInverse(face)] = undefined;
+                neighbor[LinkableChunk.type].neighbors[FaceUtils.getInverse(face)] = undefined;
                 this.neighbors[face] = undefined;  // This ensures that references to dead chunks won't keep other dead chunks alive.
             }
         }

@@ -1,19 +1,21 @@
 import {vec3} from "gl-matrix";
 import {Axis, FaceUtils, VoxelFace} from "../../utils/faceUtils";
+import {LinkableChunk} from "../worldStore";
+import {P$} from "ts-providers";
 import {ReadonlyVoxelPointer, VoxelPointer} from "../pointer";
 import {ChunkIndex} from "../chunkIndex";
 import {VecUtils} from "../../utils/vecUtils";
 
 // Adapted from the paper "A Fast Voxel Traversal Algorithm for Ray Tracing" by John Amanatides and Andrew Woo.
 // https://web.archive.org/web/20200215082332/http://www.cse.chalmers.se/edu/year/2010/course/TDA361/grid.pdf
-export class VoxelRayCast<TUserChunk> {
+export class VoxelRayCast<TChunk extends P$<typeof LinkableChunk, LinkableChunk<TChunk>>> {
     // >> Status registers
     public breached_face = VoxelFace.px;
     public distance_traveled = 0;
 
     // >> Traversal state
     // Represents the ray in world-space. This is used to convert distances back into positions.
-    private readonly _pointer = VoxelPointer.empty<TUserChunk>();
+    private readonly _pointer = VoxelPointer.empty<TChunk>();
     private _origin!: Readonly<vec3>;
     private _direction!: Readonly<vec3>;
 
@@ -58,7 +60,7 @@ export class VoxelRayCast<TUserChunk> {
         }
     }
 
-    get pointer(): ReadonlyVoxelPointer<TUserChunk> {
+    get pointer(): ReadonlyVoxelPointer<TChunk> {
         return this._pointer;
     }
 

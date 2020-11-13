@@ -36,6 +36,7 @@
   "homepage": "https://github.com/radbuglet/voxellent#readme",
   "devDependencies": {
     "@types/gl-matrix": "^2.4.5",
+    "ts-providers": "^0.2.2",
     "typescript": "^3.9.6"
   },
   "dependencies": {

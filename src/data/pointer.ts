@@ -2,7 +2,7 @@ import {P$} from "ts-providers";
 import {vec3} from "gl-matrix";
 import {ChunkIndex, WorldSpaceUtils} from "./chunkIndex";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
-import {ChunkContainer, LinkableChunk, VoxelChunkStatus} from "./worldStore";
+import {ReadonlyChunkContainer, LinkableChunk, VoxelChunkStatus} from "./worldStore";
 import {VecUtils} from "../utils/vecUtils";
 
 const default_max_chunk_traversal = 32;
@@ -11,7 +11,7 @@ export interface ReadonlyVoxelPointer<TChunk extends P$<typeof LinkableChunk, Li
     readonly outer_pos: Readonly<vec3>;
     readonly inner_pos: ChunkIndex;
     hasChunkCache(): boolean;
-    getChunk(world: ChunkContainer<TChunk>): TChunk | undefined;
+    getChunk(world: ReadonlyChunkContainer<TChunk>): TChunk | undefined;
     getWorldPos(target?: vec3): vec3;
     getChunkPos(): Readonly<vec3>;
     moveByChunkCopy(chunk_delta: Readonly<vec3>, max_cache_traversal?: number): VoxelPointer<TChunk>;
@@ -39,7 +39,7 @@ export class VoxelPointer<TChunk extends P$<typeof LinkableChunk, LinkableChunk<
         return instance;
     }
 
-    static fromPosAttached<TChunk extends P$<typeof LinkableChunk, LinkableChunk<TChunk>>>(world: ChunkContainer<TChunk>, pos: Readonly<vec3>) {
+    static fromPosAttached<TChunk extends P$<typeof LinkableChunk, LinkableChunk<TChunk>>>(world: ReadonlyChunkContainer<TChunk>, pos: Readonly<vec3>) {
         const instance = new VoxelPointer<TChunk>();
         instance.setWorldPos(pos);
         instance.forceRefreshChunkCache(world);  // We know that the chunk cache won't be valid.
@@ -61,16 +61,16 @@ export class VoxelPointer<TChunk extends P$<typeof LinkableChunk, LinkableChunk<
         this.chunk_cache = undefined;
     }
 
-    forceRefreshChunkCache(world: ChunkContainer<TChunk>): boolean {
+    forceRefreshChunkCache(world: ReadonlyChunkContainer<TChunk>): boolean {
         this.chunk_cache = world.getChunk(this._outer_pos);
         return this.chunk_cache != null;
     }
 
-    refreshChunkCache(world: ChunkContainer<TChunk>): boolean {
+    refreshChunkCache(world: ReadonlyChunkContainer<TChunk>): boolean {
         return this.hasChunkCache() || this.forceRefreshChunkCache(world);
     }
 
-    getChunk(world: ChunkContainer<TChunk>): TChunk | undefined {
+    getChunk(world: ReadonlyChunkContainer<TChunk>): TChunk | undefined {
         this.refreshChunkCache(world);
         return this.chunk_cache;
     }

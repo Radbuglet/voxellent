@@ -3,7 +3,11 @@ import {P$} from "ts-providers";
 import {FaceUtils, VoxelFace} from "../utils/faceUtils";
 import {VectorKey, VecUtils} from "../utils/vecUtils";
 
-export class ChunkContainer<TChunk extends P$<typeof LinkableChunk, LinkableChunk<TChunk>>> {
+export interface ReadonlyChunkContainer<TChunk extends P$<typeof LinkableChunk, LinkableChunk<TChunk>>> {
+    getChunk(pos: Readonly<vec3>): TChunk | undefined;
+}
+
+export class ChunkContainer<TChunk extends P$<typeof LinkableChunk, LinkableChunk<TChunk>>> implements ReadonlyChunkContainer<TChunk> {
     public static readonly type = Symbol();
     private readonly chunks = new Map<VectorKey, TChunk>();
 
